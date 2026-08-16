@@ -156,8 +156,8 @@ export default function ChecklistScreen() {
                 <View style={styles.itemBody}>
                   <Text style={[styles.itemName, item.have && styles.itemNameDone]}>{item.name}</Text>
                   {view === 'todos' && <Text style={styles.itemCat}>{item.category}</Text>}
+                  {item.quantity ? <Text style={styles.itemQuantity}>{item.quantity}</Text> : null}
                 </View>
-                <Text style={styles.itemMeta}>{item.quantity || '—'}</Text>
                 <Pressable hitSlop={12} onPress={() => removeItem(item.id)}>
                   <Text style={styles.remove}>✕</Text>
                 </Pressable>
@@ -205,7 +205,7 @@ function makeStyles(colors: Colors) {
 
     item: {
       flexDirection: 'row',
-      alignItems: 'center',
+      alignItems: 'flex-start',
       gap: spacing.md,
       paddingVertical: spacing.md,
       borderBottomWidth: 1,
@@ -214,6 +214,7 @@ function makeStyles(colors: Colors) {
     box: {
       width: 20,
       height: 20,
+      marginTop: 1,
       borderRadius: 4,
       borderWidth: 2,
       borderColor: colors.border,
@@ -226,7 +227,7 @@ function makeStyles(colors: Colors) {
     itemName: { color: colors.text, fontSize: 15 },
     itemNameDone: { color: colors.textMuted },
     itemCat: { fontFamily: mono, fontSize: 10, letterSpacing: 0.8, textTransform: 'uppercase', color: colors.textMuted, marginTop: 2 },
-    itemMeta: { fontFamily: mono, fontSize: 10, letterSpacing: 0.8, textTransform: 'uppercase', color: colors.textMuted },
+    itemQuantity: { fontSize: 12, lineHeight: 16, color: colors.textMuted, marginTop: 3 },
     remove: { color: colors.textMuted, fontSize: 15, paddingHorizontal: spacing.xs },
   });
 }
