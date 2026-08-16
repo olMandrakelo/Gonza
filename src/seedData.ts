@@ -11,7 +11,7 @@ const GEAR_KEY = 'gonza:gear';
  * merged into one entry with the per-bag breakdown in `quantity`, so the list stays a family
  * checklist rather than 60+ near-duplicate rows.
  */
-const SEED_ITEMS: Omit<GearItem, 'id' | 'have'>[] = [
+export const SEED_ITEMS: Omit<GearItem, 'id' | 'have'>[] = [
   { name: 'Agua fraccionada', category: 'Agua', quantity: '8L total: 3L líder + 2L apoyo + 2L y 1L niños' },
   { name: 'Camelback 2L (vacío)', category: 'Agua', quantity: 'Mochila líder' },
   { name: 'Filtro portátil de agua', category: 'Agua' },
@@ -51,16 +51,22 @@ const SEED_ITEMS: Omit<GearItem, 'id' | 'have'>[] = [
  * checklist is still empty — never overwrites items the user already added or edited.
  */
 export async function seedGearIfNeeded(): Promise<void> {
-  const already = await AsyncStorage.getItem(SEEDED_FLAG);
-  if (already) return;
+  try {
+    const already = await AsyncStorage.getItem(SEEDED_FLAG);
+    if (already) return;
 
-  const existingRaw = await AsyncStorage.getItem(GEAR_KEY);
-  const existing: GearItem[] = existingRaw ? JSON.parse(existingRaw) : [];
+    const existingRaw = await AsyncStorage.getItem(GEAR_KEY);
+    const existing: GearItem[] = existingRaw ? JSON.parse(existingRaw) ?? [] : [];
 
-  if (existing.length === 0) {
-    const seeded: GearItem[] = SEED_ITEMS.map((item) => ({ ...item, id: generateId(), have: false }));
-    await AsyncStorage.setItem(GEAR_KEY, JSON.stringify(seeded));
+    if (existing.length === 0) {
+      const seeded: GearItem[] = SEED_ITEMS.map((item) => ({ ...item, id: generateId(), have: false }));
+      await AsyncStorage.setItem(GEAR_KEY, JSON.stringify(seeded));
+    }
+
+    await AsyncStorage.setItem(SEEDED_FLAG, 'done');
+  } catch (err) {
+    // Never block app startup on a seeding failure — the "Cargar checklist sugerido" button
+    // in the empty Equipo view is the fallback if this silently didn't run.
+    console.error('seedGearIfNeeded failed', err);
   }
-
-  await AsyncStorage.setItem(SEEDED_FLAG, 'done');
 }

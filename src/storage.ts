@@ -45,9 +45,17 @@ export function useStorageList<T extends { id: string }>(storageKey: string) {
     [items, persist]
   );
 
+  const addMany = useCallback(
+    (newItems: Omit<T, 'id'>[]) => {
+      const withIds = newItems.map((item) => ({ ...item, id: generateId() }) as T);
+      return persist([...withIds, ...items]);
+    },
+    [items, persist]
+  );
+
   const removeItem = useCallback((id: string) => persist(items.filter((it) => it.id !== id)), [items, persist]);
 
-  return { items, loading, addItem, updateItem, removeItem };
+  return { items, loading, addItem, addMany, updateItem, removeItem };
 }
 
 /** Like useStorageList, but for a single record (e.g. a family plan) instead of a list. */

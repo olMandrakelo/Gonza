@@ -6,6 +6,7 @@ import { useTheme } from '../ui/ThemeContext';
 import { Colors, mono, progressColor, radius, spacing } from '../ui/theme';
 import { useStorageList } from '../storage';
 import { GEAR_CATEGORIES, GearCategory, GearItem } from '../types';
+import { SEED_ITEMS } from '../seedData';
 
 /** 'resumen' shows readiness + per-category bars; anything else is a filtered item list. */
 type View_ = 'resumen' | 'todos' | GearCategory;
@@ -13,7 +14,7 @@ type View_ = 'resumen' | 'todos' | GearCategory;
 export default function ChecklistScreen() {
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
-  const { items, loading, addItem, updateItem, removeItem } = useStorageList<GearItem>('gonza:gear');
+  const { items, loading, addItem, addMany, updateItem, removeItem } = useStorageList<GearItem>('gonza:gear');
   const [view, setView] = useState<View_>('resumen');
   const [showForm, setShowForm] = useState(false);
   const [name, setName] = useState('');
@@ -111,7 +112,14 @@ export default function ChecklistScreen() {
             </View>
 
             {byCategory.length === 0 ? (
-              <EmptyState text="Todavía no cargaste equipo. Tocá + Ítem para empezar." />
+              <View style={styles.emptyWrap}>
+                <EmptyState text="Todavía no cargaste equipo. Tocá + Ítem para empezar." />
+                <Button
+                  title="Cargar checklist sugerido (Día Cero)"
+                  variant="secondary"
+                  onPress={() => addMany(SEED_ITEMS.map((item) => ({ ...item, have: false })))}
+                />
+              </View>
             ) : (
               <View style={styles.cats}>
                 {byCategory.map((row) => {
@@ -186,6 +194,7 @@ function makeStyles(colors: Colors) {
     readySideText: { fontFamily: mono, fontSize: 11, color: colors.textMuted, lineHeight: 17 },
     readySideStrong: { color: colors.text, fontWeight: '700' },
 
+    emptyWrap: { gap: spacing.md },
     cats: { gap: spacing.md },
     catRow: { gap: spacing.xs },
     catTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' },
