@@ -49,8 +49,8 @@ function Navigation() {
         >
           <Tab.Screen name="Checklist" component={ChecklistScreen} />
           <Tab.Screen name="Cursos" component={CoursesScreen} />
-          <Tab.Screen name="Material" component={MaterialScreen} />
           <Tab.Screen name="Simulacros" component={QuizScreen} />
+          <Tab.Screen name="Material" component={MaterialScreen} />
           <Tab.Screen name="Ajustes" component={SettingsScreen} />
         </Tab.Navigator>
       </NavigationContainer>
