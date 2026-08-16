@@ -32,4 +32,9 @@ jobs:
           token: ${{ secrets.EXPO_TOKEN }}
 
       - name: Publish OTA update
-        run: npx eas-cli update --branch preview --message "${{ github.event.head_commit.message }}" --non-interactive
+        env:
+          COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+        run: |
+          npx eas-cli update --branch preview \
+            --message "${COMMIT_MESSAGE%%$'\n'*}" \
+            --non-interactive
