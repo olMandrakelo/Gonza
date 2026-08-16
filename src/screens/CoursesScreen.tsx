@@ -2,15 +2,10 @@ import React, { useMemo, useState } from 'react';
 import { FlatList, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button, Card, Chip, EmptyState, Field, Screen } from '../ui/components';
-import { colors, spacing } from '../ui/theme';
+import { useTheme } from '../ui/ThemeContext';
+import { Colors, spacing } from '../ui/theme';
 import { useStorageList } from '../storage';
 import { COURSE_STATUSES, Course, CourseStatus } from '../types';
-
-const STATUS_COLOR: Record<CourseStatus, string> = {
-  pendiente: colors.textMuted,
-  en_curso: colors.warning,
-  hecho: colors.accent,
-};
 
 function nextStatus(status: CourseStatus): CourseStatus {
   if (status === 'pendiente') return 'en_curso';
@@ -19,6 +14,13 @@ function nextStatus(status: CourseStatus): CourseStatus {
 }
 
 export default function CoursesScreen() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const statusColor: Record<CourseStatus, string> = {
+    pendiente: colors.textMuted,
+    en_curso: colors.warning,
+    hecho: colors.accent,
+  };
   const { items, loading, addItem, updateItem, removeItem } = useStorageList<Course>('gonza:courses');
   const [showForm, setShowForm] = useState(false);
   const [name, setName] = useState('');
@@ -86,8 +88,8 @@ export default function CoursesScreen() {
               <Pressable style={styles.rowBody} onPress={() => updateItem(item.id, { status: nextStatus(item.status) })}>
                 <Text style={styles.rowTitle}>{item.name}</Text>
                 {item.provider ? <Text style={styles.rowMeta}>{item.provider}</Text> : null}
-                <View style={[styles.statusPill, { borderColor: STATUS_COLOR[item.status] }]}>
-                  <Text style={[styles.statusText, { color: STATUS_COLOR[item.status] }]}>
+                <View style={[styles.statusPill, { borderColor: statusColor[item.status] }]}>
+                  <Text style={[styles.statusText, { color: statusColor[item.status] }]}>
                     {COURSE_STATUSES.find((s) => s.value === item.status)?.label}
                   </Text>
                 </View>
@@ -103,41 +105,43 @@ export default function CoursesScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.background },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.md,
-    paddingBottom: spacing.sm,
-  },
-  title: { color: colors.text, fontSize: 24, fontWeight: '700' },
-  subtitle: { color: colors.textMuted, marginTop: 2 },
-  filterRow: { paddingHorizontal: spacing.lg, marginBottom: spacing.sm, flexGrow: 0 },
-  list: { paddingHorizontal: spacing.lg, paddingBottom: spacing.xl },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 12,
-    padding: spacing.md,
-    marginBottom: spacing.sm,
-  },
-  rowBody: { flex: 1 },
-  rowTitle: { color: colors.text, fontSize: 15, fontWeight: '600' },
-  rowMeta: { color: colors.textMuted, fontSize: 12, marginTop: 2 },
-  statusPill: {
-    alignSelf: 'flex-start',
-    borderWidth: 1,
-    borderRadius: 999,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 2,
-    marginTop: spacing.sm,
-  },
-  statusText: { fontSize: 12, fontWeight: '600' },
-  remove: { color: colors.textMuted, fontSize: 16, paddingHorizontal: spacing.xs },
-});
+function makeStyles(colors: Colors) {
+  return StyleSheet.create({
+    safe: { flex: 1, backgroundColor: colors.background },
+    header: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingHorizontal: spacing.lg,
+      paddingTop: spacing.md,
+      paddingBottom: spacing.sm,
+    },
+    title: { color: colors.text, fontSize: 24, fontWeight: '700' },
+    subtitle: { color: colors.textMuted, marginTop: 2 },
+    filterRow: { paddingHorizontal: spacing.lg, marginBottom: spacing.sm, flexGrow: 0 },
+    list: { paddingHorizontal: spacing.lg, paddingBottom: spacing.xl },
+    row: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 12,
+      padding: spacing.md,
+      marginBottom: spacing.sm,
+    },
+    rowBody: { flex: 1 },
+    rowTitle: { color: colors.text, fontSize: 15, fontWeight: '600' },
+    rowMeta: { color: colors.textMuted, fontSize: 12, marginTop: 2 },
+    statusPill: {
+      alignSelf: 'flex-start',
+      borderWidth: 1,
+      borderRadius: 999,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: 2,
+      marginTop: spacing.sm,
+    },
+    statusText: { fontSize: 12, fontWeight: '600' },
+    remove: { color: colors.textMuted, fontSize: 16, paddingHorizontal: spacing.xs },
+  });
+}

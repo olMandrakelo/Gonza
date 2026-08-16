@@ -1,4 +1,4 @@
-import { NavigationContainer, DarkTheme } from '@react-navigation/native';
+import { NavigationContainer, DarkTheme, DefaultTheme } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -7,32 +7,36 @@ import ChecklistScreen from './src/screens/ChecklistScreen';
 import CoursesScreen from './src/screens/CoursesScreen';
 import MaterialScreen from './src/screens/MaterialScreen';
 import QuizScreen from './src/screens/QuizScreen';
-import { colors } from './src/ui/theme';
+import SettingsScreen from './src/screens/SettingsScreen';
+import { ThemeProvider, useTheme } from './src/ui/ThemeContext';
 
 const Tab = createBottomTabNavigator();
-
-const navTheme = {
-  ...DarkTheme,
-  colors: {
-    ...DarkTheme.colors,
-    background: colors.background,
-    card: colors.surface,
-    text: colors.text,
-    border: colors.border,
-    primary: colors.accent,
-  },
-};
 
 const TAB_ICONS: Record<string, string> = {
   Checklist: '🎒',
   Cursos: '📚',
   Material: '📝',
   Simulacros: '❓',
+  Ajustes: '⚙️',
 };
 
-export default function App() {
+function Navigation() {
+  const { colors, scheme } = useTheme();
+  const baseTheme = scheme === 'dark' ? DarkTheme : DefaultTheme;
+  const navTheme = {
+    ...baseTheme,
+    colors: {
+      ...baseTheme.colors,
+      background: colors.background,
+      card: colors.surface,
+      text: colors.text,
+      border: colors.border,
+      primary: colors.accent,
+    },
+  };
+
   return (
-    <SafeAreaProvider>
+    <>
       <NavigationContainer theme={navTheme}>
         <Tab.Navigator
           screenOptions={({ route }) => ({
@@ -47,9 +51,20 @@ export default function App() {
           <Tab.Screen name="Cursos" component={CoursesScreen} />
           <Tab.Screen name="Material" component={MaterialScreen} />
           <Tab.Screen name="Simulacros" component={QuizScreen} />
+          <Tab.Screen name="Ajustes" component={SettingsScreen} />
         </Tab.Navigator>
       </NavigationContainer>
-      <StatusBar style="light" />
+      <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
+    </>
+  );
+}
+
+export default function App() {
+  return (
+    <SafeAreaProvider>
+      <ThemeProvider>
+        <Navigation />
+      </ThemeProvider>
     </SafeAreaProvider>
   );
 }

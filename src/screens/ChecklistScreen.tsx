@@ -2,11 +2,14 @@ import React, { useMemo, useState } from 'react';
 import { FlatList, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button, Card, Chip, EmptyState, Field, Screen } from '../ui/components';
-import { colors, spacing } from '../ui/theme';
+import { useTheme } from '../ui/ThemeContext';
+import { Colors, spacing } from '../ui/theme';
 import { useStorageList } from '../storage';
 import { GEAR_CATEGORIES, GearCategory, GearItem } from '../types';
 
 export default function ChecklistScreen() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const { items, loading, addItem, updateItem, removeItem } = useStorageList<GearItem>('gonza:gear');
   const [showForm, setShowForm] = useState(false);
   const [name, setName] = useState('');
@@ -101,47 +104,49 @@ export default function ChecklistScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.background },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.md,
-    paddingBottom: spacing.sm,
-  },
-  title: { color: colors.text, fontSize: 24, fontWeight: '700' },
-  subtitle: { color: colors.textMuted, marginTop: 2 },
-  fieldLabel: { color: colors.textMuted, fontSize: 13, marginBottom: spacing.xs },
-  chipsRow: { marginBottom: spacing.md },
-  filterRow: { paddingHorizontal: spacing.lg, marginBottom: spacing.sm, flexGrow: 0 },
-  list: { paddingHorizontal: spacing.lg, paddingBottom: spacing.xl },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 12,
-    padding: spacing.md,
-    marginBottom: spacing.sm,
-  },
-  checkbox: {
-    width: 24,
-    height: 24,
-    borderRadius: 6,
-    borderWidth: 2,
-    borderColor: colors.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: spacing.md,
-  },
-  checkboxChecked: { backgroundColor: colors.accent, borderColor: colors.accent },
-  checkmark: { color: '#0F1512', fontWeight: '700' },
-  rowBody: { flex: 1 },
-  rowTitle: { color: colors.text, fontSize: 15, fontWeight: '600' },
-  rowTitleDone: { textDecorationLine: 'line-through', color: colors.textMuted },
-  rowMeta: { color: colors.textMuted, fontSize: 12, marginTop: 2 },
-  remove: { color: colors.textMuted, fontSize: 16, paddingHorizontal: spacing.xs },
-});
+function makeStyles(colors: Colors) {
+  return StyleSheet.create({
+    safe: { flex: 1, backgroundColor: colors.background },
+    header: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingHorizontal: spacing.lg,
+      paddingTop: spacing.md,
+      paddingBottom: spacing.sm,
+    },
+    title: { color: colors.text, fontSize: 24, fontWeight: '700' },
+    subtitle: { color: colors.textMuted, marginTop: 2 },
+    fieldLabel: { color: colors.textMuted, fontSize: 13, marginBottom: spacing.xs },
+    chipsRow: { marginBottom: spacing.md },
+    filterRow: { paddingHorizontal: spacing.lg, marginBottom: spacing.sm, flexGrow: 0 },
+    list: { paddingHorizontal: spacing.lg, paddingBottom: spacing.xl },
+    row: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 12,
+      padding: spacing.md,
+      marginBottom: spacing.sm,
+    },
+    checkbox: {
+      width: 24,
+      height: 24,
+      borderRadius: 6,
+      borderWidth: 2,
+      borderColor: colors.border,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: spacing.md,
+    },
+    checkboxChecked: { backgroundColor: colors.accent, borderColor: colors.accent },
+    checkmark: { color: colors.background, fontWeight: '700' },
+    rowBody: { flex: 1 },
+    rowTitle: { color: colors.text, fontSize: 15, fontWeight: '600' },
+    rowTitleDone: { textDecorationLine: 'line-through', color: colors.textMuted },
+    rowMeta: { color: colors.textMuted, fontSize: 12, marginTop: 2 },
+    remove: { color: colors.textMuted, fontSize: 16, paddingHorizontal: spacing.xs },
+  });
+}

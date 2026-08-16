@@ -1,8 +1,9 @@
 import React, { useMemo, useState } from 'react';
-import { FlatList, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, TextInput, View, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button, Card, Chip, EmptyState, Field, Screen } from '../ui/components';
-import { colors, spacing } from '../ui/theme';
+import { useTheme } from '../ui/ThemeContext';
+import { Colors, spacing } from '../ui/theme';
 import { useStorageList } from '../storage';
 import { Course, Question } from '../types';
 
@@ -18,6 +19,8 @@ function shuffle<T>(arr: T[]): T[] {
 }
 
 export default function QuizScreen() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const { items: questions, loading, addItem, removeItem } = useStorageList<Question>('gonza:questions');
   const { items: courses } = useStorageList<Course>('gonza:courses');
   const [mode, setMode] = useState<Mode>('banco');
@@ -56,6 +59,8 @@ function QuestionBank({
   addItem: (q: Omit<Question, 'id'>) => Promise<Question>;
   removeItem: (id: string) => Promise<void>;
 }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const [showForm, setShowForm] = useState(false);
   const [text, setText] = useState('');
   const [optionTexts, setOptionTexts] = useState(['', '', '', '']);
@@ -147,6 +152,8 @@ function QuestionBank({
 }
 
 function Simulacro({ questions, courses }: { questions: Question[]; courses: Course[] }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const [courseFilter, setCourseFilter] = useState<string | 'Todos'>('Todos');
   const [running, setRunning] = useState<Question[] | null>(null);
   const [index, setIndex] = useState(0);
@@ -247,70 +254,72 @@ function Simulacro({ questions, courses }: { questions: Question[]; courses: Cou
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.background },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.md,
-    paddingBottom: spacing.sm,
-  },
-  title: { color: colors.text, fontSize: 24, fontWeight: '700' },
-  subtitle: { color: colors.textMuted, marginTop: 2 },
-  modeRow: { flexDirection: 'row', paddingHorizontal: spacing.lg, marginBottom: spacing.sm },
-  addRow: { paddingHorizontal: spacing.lg, marginBottom: spacing.sm },
-  fieldLabel: { color: colors.textMuted, fontSize: 13, marginBottom: spacing.xs },
-  chipsRow: { marginBottom: spacing.md },
-  list: { paddingHorizontal: spacing.lg, paddingBottom: spacing.xl },
-  optionRow: { flexDirection: 'row', alignItems: 'center', marginBottom: spacing.sm },
-  radio: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    borderWidth: 2,
-    borderColor: colors.border,
-    marginRight: spacing.sm,
-  },
-  radioSelected: { backgroundColor: colors.accent, borderColor: colors.accent },
-  optionInput: {
-    flex: 1,
-    backgroundColor: colors.surfaceAlt,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: colors.border,
-    color: colors.text,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 12,
-    padding: spacing.md,
-    marginBottom: spacing.sm,
-  },
-  rowBody: { flex: 1 },
-  rowTitle: { color: colors.text, fontSize: 15, fontWeight: '600' },
-  rowMeta: { color: colors.textMuted, fontSize: 12, marginTop: 2 },
-  remove: { color: colors.textMuted, fontSize: 16, paddingHorizontal: spacing.xs },
-  progress: { color: colors.textMuted, marginBottom: spacing.sm },
-  quizQuestion: { color: colors.text, fontSize: 17, fontWeight: '600', marginBottom: spacing.md },
-  quizOption: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surfaceAlt,
-    borderRadius: 8,
-    padding: spacing.md,
-    marginBottom: spacing.sm,
-  },
-  quizOptionCorrect: { borderColor: colors.accent, backgroundColor: colors.accentMuted },
-  quizOptionWrong: { borderColor: colors.danger, backgroundColor: '#3A2320' },
-  quizOptionText: { color: colors.text },
-  resultTitle: { color: colors.textMuted, fontSize: 14 },
-  resultScore: { color: colors.text, fontSize: 22, fontWeight: '700', marginTop: spacing.xs },
-});
+function makeStyles(colors: Colors) {
+  return StyleSheet.create({
+    safe: { flex: 1, backgroundColor: colors.background },
+    header: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingHorizontal: spacing.lg,
+      paddingTop: spacing.md,
+      paddingBottom: spacing.sm,
+    },
+    title: { color: colors.text, fontSize: 24, fontWeight: '700' },
+    subtitle: { color: colors.textMuted, marginTop: 2 },
+    modeRow: { flexDirection: 'row', paddingHorizontal: spacing.lg, marginBottom: spacing.sm },
+    addRow: { paddingHorizontal: spacing.lg, marginBottom: spacing.sm },
+    fieldLabel: { color: colors.textMuted, fontSize: 13, marginBottom: spacing.xs },
+    chipsRow: { marginBottom: spacing.md },
+    list: { paddingHorizontal: spacing.lg, paddingBottom: spacing.xl },
+    optionRow: { flexDirection: 'row', alignItems: 'center', marginBottom: spacing.sm },
+    radio: {
+      width: 20,
+      height: 20,
+      borderRadius: 10,
+      borderWidth: 2,
+      borderColor: colors.border,
+      marginRight: spacing.sm,
+    },
+    radioSelected: { backgroundColor: colors.accent, borderColor: colors.accent },
+    optionInput: {
+      flex: 1,
+      backgroundColor: colors.surfaceAlt,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: colors.border,
+      color: colors.text,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+    },
+    row: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 12,
+      padding: spacing.md,
+      marginBottom: spacing.sm,
+    },
+    rowBody: { flex: 1 },
+    rowTitle: { color: colors.text, fontSize: 15, fontWeight: '600' },
+    rowMeta: { color: colors.textMuted, fontSize: 12, marginTop: 2 },
+    remove: { color: colors.textMuted, fontSize: 16, paddingHorizontal: spacing.xs },
+    progress: { color: colors.textMuted, marginBottom: spacing.sm },
+    quizQuestion: { color: colors.text, fontSize: 17, fontWeight: '600', marginBottom: spacing.md },
+    quizOption: {
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.surfaceAlt,
+      borderRadius: 8,
+      padding: spacing.md,
+      marginBottom: spacing.sm,
+    },
+    quizOptionCorrect: { borderColor: colors.accent, backgroundColor: colors.accentMuted },
+    quizOptionWrong: { borderColor: colors.danger, backgroundColor: colors.surfaceAlt },
+    quizOptionText: { color: colors.text },
+    resultTitle: { color: colors.textMuted, fontSize: 14 },
+    resultScore: { color: colors.text, fontSize: 22, fontWeight: '700', marginTop: spacing.xs },
+  });
+}
