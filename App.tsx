@@ -1,7 +1,7 @@
 import { NavigationContainer, DarkTheme, DefaultTheme } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { StatusBar } from 'expo-status-bar';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import ChecklistScreen from './src/screens/ChecklistScreen';
 import CoursesScreen from './src/screens/CoursesScreen';
 import MaterialScreen from './src/screens/MaterialScreen';
@@ -15,6 +15,7 @@ const Tab = createBottomTabNavigator();
 
 function Navigation() {
   const { colors, scheme } = useTheme();
+  const insets = useSafeAreaInsets();
   const baseTheme = scheme === 'dark' ? DarkTheme : DefaultTheme;
   const navTheme = {
     ...baseTheme,
@@ -39,9 +40,9 @@ function Navigation() {
             tabBarStyle: {
               backgroundColor: colors.surface,
               borderTopColor: colors.border,
-              height: 62,
+              height: 62 + insets.bottom,
               paddingTop: 6,
-              paddingBottom: 8,
+              paddingBottom: 8 + insets.bottom,
             },
             tabBarLabelStyle: {
               fontFamily: mono,
