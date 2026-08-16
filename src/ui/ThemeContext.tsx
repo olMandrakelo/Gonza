@@ -1,7 +1,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { useColorScheme } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { ACCENT_PRESETS, AccentKey, Colors, Scheme, ThemeMode, buildColors, radius, spacing } from './theme';
+import { AccentKey, Colors, Scheme, ThemeMode, buildColors, normalizeAccentKey, radius, spacing } from './theme';
 
 const MODE_KEY = 'gonza:theme-mode';
 const ACCENT_KEY = 'gonza:theme-accent';
@@ -22,7 +22,7 @@ const ThemeContext = createContext<ThemeContextValue | null>(null);
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const systemScheme = useColorScheme();
   const [mode, setModeState] = useState<ThemeMode>('dark');
-  const [accentKey, setAccentKeyState] = useState<AccentKey>('verde');
+  const [accentKey, setAccentKeyState] = useState<AccentKey>('senal');
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
@@ -31,7 +31,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       ([storedMode, storedAccent]) => {
         if (cancelled) return;
         if (storedMode === 'dark' || storedMode === 'light' || storedMode === 'system') setModeState(storedMode);
-        if (storedAccent && storedAccent in ACCENT_PRESETS) setAccentKeyState(storedAccent as AccentKey);
+        const accent = normalizeAccentKey(storedAccent);
+        if (accent) setAccentKeyState(accent);
         setLoaded(true);
       }
     );

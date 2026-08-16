@@ -26,14 +26,22 @@ There is no test suite yet.
 - `src/storage.ts` — `useStorageList<T>(key)`, a generic hook giving `{ items, loading, addItem, updateItem, removeItem }`
   backed by AsyncStorage, JSON-serialized under one storage key per entity list. All screens use this instead of a
   custom backend/database — add new entity types by defining a type in `types.ts` and calling the hook with a new key.
-- `src/ui/theme.ts` — spacing/radius tokens, dark/light base palettes, and the accent color presets (`ACCENT_PRESETS`);
-  `buildColors(scheme, accentKey)` combines them into the active `Colors` object.
+- `src/ui/theme.ts` — spacing/radius tokens, dark/light base palettes, and the accent presets (`ACCENT_PRESETS`:
+  `senal` / `oliva` / `arena` / `acero`); `buildColors(scheme, accentKey)` combines them into the active `Colors`.
+  Also exports `mono` (the platform monospace face used for titles, labels and figures), `progressColor(colors, ratio)`
+  for the shared short/halfway/on-track colour rule, and `normalizeAccentKey` which maps the pre-redesign accent keys
+  onto the current ones so a stored preference survives the rename.
 - `src/ui/ThemeContext.tsx` — `ThemeProvider` + `useTheme()`. Persists theme mode (`dark` / `light` / `system`) and
   accent choice to AsyncStorage, resolves `system` against `useColorScheme()`, and exposes `{ colors, spacing, radius, scheme, mode, setMode, accentKey, setAccentKey }`.
-- `src/ui/components.tsx` — shared primitives (`Screen`, `Card`, `Field`, `Chip`, `Button`, `EmptyState`), each reading
-  colors from `useTheme()` and building their `StyleSheet` via `useMemo` so they re-theme live.
+- `src/ui/components.tsx` — shared primitives (`Screen`, `ScreenHeader`, `Card`, `Field`, `Label`, `Chip`, `Button`,
+  `Meter`, `Bar`, `EmptyState`), each reading colors from `useTheme()` and building their `StyleSheet` via `useMemo`
+  so they re-theme live. `ScreenHeader` is the section-code + title masthead every screen opens with.
+- `src/ui/icons.tsx` — tab icons built from plain `View`s (borders and radii), not SVG or an icon font. Both of those
+  are native modules: adding one would force a fresh `eas build` and break the over-the-air update path, so icon work
+  must stay within RN primitives unless a native rebuild is already planned.
 - `src/screens/`
-  - `ChecklistScreen.tsx` — gear/supplies checklist, grouped by category, toggle "tengo esto" per item.
+  - `ChecklistScreen.tsx` — gear/supplies checklist. Two levels: a `resumen` view (readiness percentage, segmented
+    `Meter`, and one `Bar` per category) drills into a single category's item list, or into all items.
   - `CoursesScreen.tsx` — courses tracker with status (`pendiente` / `en_curso` / `hecho`), cycled by tapping a row.
   - `MaterialScreen.tsx` — study notes/links, optionally linked to a course.
   - `QuizScreen.tsx` — question bank (CRUD) plus a "Simulacro" mode that runs a shuffled quiz over all or
@@ -59,6 +67,14 @@ reinstall, no PC). This requires an `EXPO_TOKEN` repo secret tied to the Expo ac
   package name) requires a fresh `eas build` — the "one more PC session" case — since existing installs can't pick
   those up over the air.
 - Everything else (screens, styles, logic, the theme system) ships as a plain OTA update once the above CI is set up.
+
+## Visual direction
+
+The app is styled as a **field inventory sheet**, not a generic dark app: neutrals biased toward olive rather than
+pure grey, monospace for titles/labels/figures with the system sans for running text, squared-off radii, and signal
+orange as the default accent. Colour carries one meaning each — the accent marks interactive and "short on this",
+`colors.ok` (olive) marks done, `colors.warning` (sand) marks halfway. Screens open with a data block (readiness,
+progress, score strip) rather than an empty list, so nothing reads as a blank page.
 
 ## Conventions
 

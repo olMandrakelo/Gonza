@@ -1,9 +1,9 @@
 import React, { useMemo, useState } from 'react';
 import { FlatList, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Button, Card, Chip, EmptyState, Field, Screen } from '../ui/components';
+import { Bar, Button, Card, Chip, EmptyState, Field, Screen, ScreenHeader } from '../ui/components';
 import { useTheme } from '../ui/ThemeContext';
-import { Colors, spacing } from '../ui/theme';
+import { Colors, mono, radius, spacing } from '../ui/theme';
 import { useStorageList } from '../storage';
 import { COURSE_STATUSES, Course, CourseStatus } from '../types';
 
@@ -19,7 +19,7 @@ export default function CoursesScreen() {
   const statusColor: Record<CourseStatus, string> = {
     pendiente: colors.textMuted,
     en_curso: colors.warning,
-    hecho: colors.accent,
+    hecho: colors.ok,
   };
   const { items, loading, addItem, updateItem, removeItem } = useStorageList<Course>('gonza:courses');
   const [showForm, setShowForm] = useState(false);
@@ -27,6 +27,9 @@ export default function CoursesScreen() {
   const [provider, setProvider] = useState('');
   const [link, setLink] = useState('');
   const [filter, setFilter] = useState<CourseStatus | 'Todos'>('Todos');
+
+  const done = items.filter((c) => c.status === 'hecho').length;
+  const ratio = items.length ? done / items.length : 0;
 
   const filtered = useMemo(
     () => (filter === 'Todos' ? items : items.filter((c) => c.status === filter)),
@@ -54,21 +57,27 @@ export default function CoursesScreen() {
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <Screen>
-        <View style={styles.header}>
-          <View>
-            <Text style={styles.title}>Cursos</Text>
-            <Text style={styles.subtitle}>{loading ? 'Cargando…' : `${items.length} en la lista`}</Text>
+        <ScreenHeader
+          code={loading ? 'Cargando…' : `Sección 02 · ${done} de ${items.length} hechos`}
+          title="Cursos"
+          right={<Button title={showForm ? 'Cerrar' : '+ Curso'} onPress={() => setShowForm((v) => !v)} />}
+        />
+
+        {items.length > 0 && (
+          <View style={styles.barWrap}>
+            <Bar ratio={ratio} color={colors.ok} />
           </View>
-          <Button title={showForm ? 'Cerrar' : '+ Curso'} onPress={() => setShowForm((v) => !v)} />
-        </View>
+        )}
 
         {showForm && (
-          <Card>
-            <Field label="Nombre del curso" value={name} onChangeText={setName} placeholder="Ej: RCP y primeros auxilios" />
-            <Field label="Institución (opcional)" value={provider} onChangeText={setProvider} placeholder="Ej: Cruz Roja" />
-            <Field label="Link (opcional)" value={link} onChangeText={setLink} placeholder="https://…" autoCapitalize="none" />
-            <Button title="Guardar" onPress={handleAdd} />
-          </Card>
+          <View style={styles.formWrap}>
+            <Card>
+              <Field label="Nombre del curso" value={name} onChangeText={setName} placeholder="Ej: RCP y primeros auxilios" />
+              <Field label="Institución (opcional)" value={provider} onChangeText={setProvider} placeholder="Ej: Cruz Roja" />
+              <Field label="Link (opcional)" value={link} onChangeText={setLink} placeholder="https://…" autoCapitalize="none" />
+              <Button title="Guardar" onPress={handleAdd} />
+            </Card>
+          </View>
         )}
 
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterRow}>
@@ -88,8 +97,8 @@ export default function CoursesScreen() {
               <Pressable style={styles.rowBody} onPress={() => updateItem(item.id, { status: nextStatus(item.status) })}>
                 <Text style={styles.rowTitle}>{item.name}</Text>
                 {item.provider ? <Text style={styles.rowMeta}>{item.provider}</Text> : null}
-                <View style={[styles.statusPill, { borderColor: statusColor[item.status] }]}>
-                  <Text style={[styles.statusText, { color: statusColor[item.status] }]}>
+                <View style={[styles.pill, { borderColor: statusColor[item.status] }]}>
+                  <Text style={[styles.pillText, { color: statusColor[item.status] }]}>
                     {COURSE_STATUSES.find((s) => s.value === item.status)?.label}
                   </Text>
                 </View>
@@ -108,40 +117,30 @@ export default function CoursesScreen() {
 function makeStyles(colors: Colors) {
   return StyleSheet.create({
     safe: { flex: 1, backgroundColor: colors.background },
-    header: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      paddingHorizontal: spacing.lg,
-      paddingTop: spacing.md,
-      paddingBottom: spacing.sm,
-    },
-    title: { color: colors.text, fontSize: 24, fontWeight: '700' },
-    subtitle: { color: colors.textMuted, marginTop: 2 },
-    filterRow: { paddingHorizontal: spacing.lg, marginBottom: spacing.sm, flexGrow: 0 },
+    barWrap: { paddingHorizontal: spacing.lg, paddingBottom: spacing.md },
+    formWrap: { paddingHorizontal: spacing.lg },
+    filterRow: { paddingHorizontal: spacing.lg, marginBottom: spacing.xs, flexGrow: 0 },
     list: { paddingHorizontal: spacing.lg, paddingBottom: spacing.xl },
     row: {
       flexDirection: 'row',
       alignItems: 'flex-start',
-      backgroundColor: colors.surface,
-      borderWidth: 1,
-      borderColor: colors.border,
-      borderRadius: 12,
-      padding: spacing.md,
-      marginBottom: spacing.sm,
+      gap: spacing.md,
+      paddingVertical: spacing.md,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
     },
     rowBody: { flex: 1 },
     rowTitle: { color: colors.text, fontSize: 15, fontWeight: '600' },
-    rowMeta: { color: colors.textMuted, fontSize: 12, marginTop: 2 },
-    statusPill: {
+    rowMeta: { fontFamily: mono, fontSize: 10, letterSpacing: 0.8, textTransform: 'uppercase', color: colors.textMuted, marginTop: 3 },
+    pill: {
       alignSelf: 'flex-start',
       borderWidth: 1,
-      borderRadius: 999,
+      borderRadius: radius.sm,
       paddingHorizontal: spacing.sm,
       paddingVertical: 2,
       marginTop: spacing.sm,
     },
-    statusText: { fontSize: 12, fontWeight: '600' },
-    remove: { color: colors.textMuted, fontSize: 16, paddingHorizontal: spacing.xs },
+    pillText: { fontFamily: mono, fontSize: 10, letterSpacing: 0.8, textTransform: 'uppercase', fontWeight: '700' },
+    remove: { color: colors.textMuted, fontSize: 15, paddingHorizontal: spacing.xs },
   });
 }

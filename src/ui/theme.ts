@@ -1,3 +1,5 @@
+import { Platform } from 'react-native';
+
 export const spacing = {
   xs: 4,
   sm: 8,
@@ -7,14 +9,17 @@ export const spacing = {
 };
 
 export const radius = {
-  sm: 8,
-  md: 12,
-  lg: 16,
+  sm: 6,
+  md: 10,
+  lg: 14,
 };
+
+/** Monospace face — carries the field-inventory feel and aligns digits in columns. */
+export const mono = Platform.select({ ios: 'Menlo', android: 'monospace', default: 'monospace' });
 
 export type ThemeMode = 'dark' | 'light' | 'system';
 export type Scheme = 'dark' | 'light';
-export type AccentKey = 'verde' | 'celeste' | 'ambar' | 'violeta';
+export type AccentKey = 'senal' | 'oliva' | 'arena' | 'acero';
 
 export const ACCENT_PRESETS: Record<
   AccentKey,
@@ -24,48 +29,65 @@ export const ACCENT_PRESETS: Record<
     light: { accent: string; accentMuted: string };
   }
 > = {
-  verde: {
-    label: 'Verde',
-    dark: { accent: '#5FBF7A', accentMuted: '#2E4A38' },
-    light: { accent: '#2F9E57', accentMuted: '#DCF3E3' },
+  senal: {
+    label: 'Señal',
+    dark: { accent: '#D2601A', accentMuted: '#3A2A17' },
+    light: { accent: '#B4531A', accentMuted: '#F0DFCE' },
   },
-  celeste: {
-    label: 'Celeste',
-    dark: { accent: '#5BA8E0', accentMuted: '#234459' },
-    light: { accent: '#2C7FC1', accentMuted: '#DCEEFB' },
+  oliva: {
+    label: 'Oliva',
+    dark: { accent: '#7A9E5B', accentMuted: '#2A3A22' },
+    light: { accent: '#5C7B3E', accentMuted: '#DEE7D2' },
   },
-  ambar: {
-    label: 'Ámbar',
-    dark: { accent: '#D8B45C', accentMuted: '#4A3D22' },
-    light: { accent: '#B98A2E', accentMuted: '#FBF0D9' },
+  arena: {
+    label: 'Arena',
+    dark: { accent: '#C9A227', accentMuted: '#3A3117' },
+    light: { accent: '#8A6A15', accentMuted: '#EFE5C6' },
   },
-  violeta: {
-    label: 'Violeta',
-    dark: { accent: '#9B7FE0', accentMuted: '#3A2F59' },
-    light: { accent: '#7B5FCB', accentMuted: '#EBE4FB' },
+  acero: {
+    label: 'Acero',
+    dark: { accent: '#5B8299', accentMuted: '#1F3039' },
+    light: { accent: '#3D6478', accentMuted: '#D8E4EA' },
   },
 };
 
+/** Accent keys used before the "campo" redesign, mapped to their closest match. */
+const LEGACY_ACCENTS: Record<string, AccentKey> = {
+  verde: 'oliva',
+  celeste: 'acero',
+  ambar: 'arena',
+  violeta: 'senal',
+};
+
+export function normalizeAccentKey(stored: string | null): AccentKey | null {
+  if (!stored) return null;
+  if (stored in ACCENT_PRESETS) return stored as AccentKey;
+  return LEGACY_ACCENTS[stored] ?? null;
+}
+
+/** Neutrals are biased toward olive rather than pure grey — canvas and equipment, not generic dark UI. */
 const darkBase = {
-  background: '#0F1512',
-  surface: '#1B2420',
-  surfaceAlt: '#243029',
-  border: '#33413A',
-  text: '#EAF2ED',
-  textMuted: '#9AAAA1',
-  danger: '#E0665A',
-  warning: '#D8B45C',
+  background: '#14170F',
+  surface: '#1E2318',
+  surfaceAlt: '#272D20',
+  border: '#3A4230',
+  text: '#E6E9DC',
+  textMuted: '#9BA48C',
+  danger: '#C4553F',
+  warning: '#C9A227',
+  ok: '#7A9E5B',
 };
 
 const lightBase = {
-  background: '#F4F7F5',
-  surface: '#FFFFFF',
-  surfaceAlt: '#EEF3F0',
-  border: '#DCE3DF',
-  text: '#132018',
-  textMuted: '#5C6B62',
-  danger: '#C94B3F',
-  warning: '#8A6A1E',
+  background: '#E9E5D8',
+  surface: '#F5F2E8',
+  surfaceAlt: '#DFDACA',
+  border: '#C6BFAC',
+  text: '#1F2318',
+  textMuted: '#6B7259',
+  danger: '#A8412C',
+  warning: '#8A6A15',
+  ok: '#5C7B3E',
 };
 
 export function buildColors(scheme: Scheme, accentKey: AccentKey) {
@@ -75,3 +97,10 @@ export function buildColors(scheme: Scheme, accentKey: AccentKey) {
 }
 
 export type Colors = ReturnType<typeof buildColors>;
+
+/** Progress colour by how far along something is: short → accent, halfway → sand, on track → olive. */
+export function progressColor(colors: Colors, ratio: number) {
+  if (ratio >= 0.7) return colors.ok;
+  if (ratio >= 0.4) return colors.warning;
+  return colors.accent;
+}

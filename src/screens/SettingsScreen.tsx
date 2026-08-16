@@ -1,9 +1,9 @@
 import React, { useMemo } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Card, Screen } from '../ui/components';
+import { Card, Label, Screen, ScreenHeader } from '../ui/components';
 import { useTheme } from '../ui/ThemeContext';
-import { ACCENT_PRESETS, AccentKey, Colors, ThemeMode, spacing } from '../ui/theme';
+import { ACCENT_PRESETS, AccentKey, Colors, ThemeMode, mono, radius, spacing } from '../ui/theme';
 
 const MODE_OPTIONS: { value: ThemeMode; label: string }[] = [
   { value: 'dark', label: 'Oscuro' },
@@ -12,55 +12,59 @@ const MODE_OPTIONS: { value: ThemeMode; label: string }[] = [
 ];
 
 export default function SettingsScreen() {
-  const { colors, mode, setMode, accentKey, setAccentKey } = useTheme();
+  const { colors, scheme, mode, setMode, accentKey, setAccentKey } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <Screen>
-        <View style={styles.header}>
-          <Text style={styles.title}>Ajustes</Text>
-        </View>
+        <ScreenHeader code="Sección 05 · Preferencias" title="Ajustes" />
 
-        <View style={styles.body}>
+        <ScrollView contentContainerStyle={styles.body}>
           <Card>
-            <Text style={styles.sectionTitle}>Tema</Text>
-            <View style={styles.optionsRow}>
-              {MODE_OPTIONS.map((opt) => (
-                <Pressable
-                  key={opt.value}
-                  onPress={() => setMode(opt.value)}
-                  style={[styles.modeOption, mode === opt.value && styles.modeOptionSelected]}
-                >
-                  <Text style={[styles.modeOptionText, mode === opt.value && styles.modeOptionTextSelected]}>
-                    {opt.label}
-                  </Text>
-                </Pressable>
-              ))}
-            </View>
-          </Card>
-
-          <Card>
-            <Text style={styles.sectionTitle}>Color de acento</Text>
-            <View style={styles.swatchRow}>
-              {(Object.keys(ACCENT_PRESETS) as AccentKey[]).map((key) => {
-                const preset = ACCENT_PRESETS[key];
-                const swatchColor = preset.dark.accent;
-                const selected = accentKey === key;
+            <Label>Tema</Label>
+            <View style={styles.seg}>
+              {MODE_OPTIONS.map((opt) => {
+                const on = mode === opt.value;
                 return (
-                  <Pressable key={key} onPress={() => setAccentKey(key)} style={styles.swatchWrap}>
-                    <View style={[styles.swatch, { backgroundColor: swatchColor }, selected && styles.swatchSelected]}>
-                      {selected && <Text style={styles.swatchCheck}>✓</Text>}
-                    </View>
-                    <Text style={styles.swatchLabel}>{preset.label}</Text>
+                  <Pressable
+                    key={opt.value}
+                    onPress={() => setMode(opt.value)}
+                    style={[styles.segItem, on && styles.segItemOn]}
+                  >
+                    <Text style={[styles.segText, on && styles.segTextOn]}>{opt.label}</Text>
                   </Pressable>
                 );
               })}
             </View>
           </Card>
 
-          <Text style={styles.footer}>Preparacionista guarda todo localmente en este dispositivo. Sin cuentas, sin nube.</Text>
-        </View>
+          <Card>
+            <Label>Color de acento</Label>
+            <View style={styles.swatches}>
+              {(Object.keys(ACCENT_PRESETS) as AccentKey[]).map((key) => {
+                const preset = ACCENT_PRESETS[key];
+                const on = accentKey === key;
+                return (
+                  <Pressable key={key} onPress={() => setAccentKey(key)} style={styles.sw}>
+                    <View
+                      style={[
+                        styles.swDot,
+                        { backgroundColor: preset[scheme].accent },
+                        on && { borderColor: colors.text },
+                      ]}
+                    />
+                    <Text style={styles.swLabel}>{preset.label}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </Card>
+
+          <Text style={styles.footer}>
+            Preparacionista guarda todo en este teléfono. Sin cuentas, sin nube.
+          </Text>
+        </ScrollView>
       </Screen>
     </SafeAreaView>
   );
@@ -69,44 +73,36 @@ export default function SettingsScreen() {
 function makeStyles(colors: Colors) {
   return StyleSheet.create({
     safe: { flex: 1, backgroundColor: colors.background },
-    header: {
-      paddingHorizontal: spacing.lg,
-      paddingTop: spacing.md,
-      paddingBottom: spacing.sm,
-    },
-    title: { color: colors.text, fontSize: 24, fontWeight: '700' },
-    body: { paddingHorizontal: spacing.lg },
-    sectionTitle: { color: colors.textMuted, fontSize: 13, marginBottom: spacing.md, textTransform: 'uppercase', letterSpacing: 0.5 },
-    optionsRow: { flexDirection: 'row', gap: spacing.sm },
-    modeOption: {
+    body: { paddingHorizontal: spacing.lg, paddingBottom: spacing.xl },
+    seg: { flexDirection: 'row', gap: spacing.sm },
+    segItem: {
       flex: 1,
+      alignItems: 'center',
       paddingVertical: spacing.sm + 2,
-      borderRadius: 10,
+      borderRadius: radius.sm,
       borderWidth: 1,
       borderColor: colors.border,
       backgroundColor: colors.surfaceAlt,
-      alignItems: 'center',
     },
-    modeOptionSelected: {
-      borderColor: colors.accent,
-      backgroundColor: colors.accentMuted,
-    },
-    modeOptionText: { color: colors.textMuted, fontSize: 14, fontWeight: '600' },
-    modeOptionTextSelected: { color: colors.accent },
-    swatchRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.lg },
-    swatchWrap: { alignItems: 'center', width: 64 },
-    swatch: {
-      width: 44,
-      height: 44,
-      borderRadius: 22,
+    segItemOn: { borderColor: colors.accent, backgroundColor: colors.accentMuted },
+    segText: { fontFamily: mono, fontSize: 12, fontWeight: '700', color: colors.textMuted, letterSpacing: 0.6, textTransform: 'uppercase' },
+    segTextOn: { color: colors.accent },
+    swatches: { flexDirection: 'row', gap: spacing.xl },
+    sw: { alignItems: 'center', gap: spacing.sm },
+    swDot: {
+      width: 34,
+      height: 34,
+      borderRadius: 17,
       borderWidth: 2,
       borderColor: 'transparent',
-      alignItems: 'center',
-      justifyContent: 'center',
     },
-    swatchSelected: { borderColor: colors.text },
-    swatchCheck: { color: colors.background, fontWeight: '700' },
-    swatchLabel: { color: colors.textMuted, fontSize: 12, marginTop: spacing.xs },
-    footer: { color: colors.textMuted, fontSize: 12, textAlign: 'center', marginTop: spacing.lg, marginBottom: spacing.xl },
+    swLabel: { fontFamily: mono, fontSize: 10, letterSpacing: 0.8, textTransform: 'uppercase', color: colors.textMuted },
+    footer: {
+      color: colors.textMuted,
+      fontSize: 12,
+      textAlign: 'center',
+      marginTop: spacing.md,
+      lineHeight: 18,
+    },
   });
 }

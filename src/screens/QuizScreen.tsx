@@ -1,13 +1,15 @@
 import React, { useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, Text, TextInput, View, Pressable } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Button, Card, Chip, EmptyState, Field, Screen } from '../ui/components';
+import { Button, Card, Chip, EmptyState, Field, Label, Screen, ScreenHeader } from '../ui/components';
 import { useTheme } from '../ui/ThemeContext';
-import { Colors, spacing } from '../ui/theme';
+import { Colors, mono, radius, spacing } from '../ui/theme';
 import { useStorageList } from '../storage';
 import { Course, Question } from '../types';
 
 type Mode = 'banco' | 'simulacro';
+
+const LETTERS = ['A', 'B', 'C', 'D'];
 
 function shuffle<T>(arr: T[]): T[] {
   const copy = [...arr];
@@ -23,20 +25,18 @@ export default function QuizScreen() {
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const { items: questions, loading, addItem, removeItem } = useStorageList<Question>('gonza:questions');
   const { items: courses } = useStorageList<Course>('gonza:courses');
-  const [mode, setMode] = useState<Mode>('banco');
+  const [mode, setMode] = useState<Mode>('simulacro');
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <Screen>
-        <View style={styles.header}>
-          <View>
-            <Text style={styles.title}>Simulacros</Text>
-            <Text style={styles.subtitle}>{loading ? 'Cargando…' : `${questions.length} preguntas`}</Text>
-          </View>
-        </View>
+        <ScreenHeader
+          code={loading ? 'Cargando…' : `Sección 03 · ${questions.length} preguntas`}
+          title="Práctica"
+        />
         <View style={styles.modeRow}>
-          <Chip label="Banco de preguntas" selected={mode === 'banco'} onPress={() => setMode('banco')} />
           <Chip label="Simulacro" selected={mode === 'simulacro'} onPress={() => setMode('simulacro')} />
+          <Chip label="Banco" selected={mode === 'banco'} onPress={() => setMode('banco')} />
         </View>
         {mode === 'banco' ? (
           <QuestionBank questions={questions} courses={courses} addItem={addItem} removeItem={removeItem} />
@@ -102,16 +102,18 @@ function QuestionBank({
         {showForm && (
           <Card>
             <Field label="Pregunta" value={text} onChangeText={setText} placeholder="Ej: ¿Cuánta agua por persona por día?" />
-            <Text style={styles.fieldLabel}>Opciones (marcá la correcta)</Text>
+            <Label>Opciones — marcá la correcta</Label>
             {optionTexts.map((opt, i) => (
               <View key={i} style={styles.optionRow}>
                 <Pressable
                   style={[styles.radio, correctIndex === i && styles.radioSelected]}
                   onPress={() => setCorrectIndex(i)}
-                />
+                >
+                  <Text style={[styles.radioText, correctIndex === i && styles.radioTextSelected]}>{LETTERS[i]}</Text>
+                </Pressable>
                 <TextInput
                   style={styles.optionInput}
-                  placeholder={`Opción ${i + 1}`}
+                  placeholder={`Opción ${LETTERS[i]}`}
                   placeholderTextColor={colors.textMuted}
                   value={opt}
                   onChangeText={(v) => setOption(i, v)}
@@ -120,7 +122,7 @@ function QuestionBank({
             ))}
             {courses.length > 0 && (
               <>
-                <Text style={styles.fieldLabel}>Curso relacionado (opcional)</Text>
+                <Label>Curso relacionado (opcional)</Label>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipsRow}>
                   <Chip label="Ninguno" selected={!courseId} onPress={() => setCourseId(undefined)} />
                   {courses.map((c) => (
@@ -132,12 +134,14 @@ function QuestionBank({
             <Button title="Guardar" onPress={handleAdd} />
           </Card>
         )}
-        {questions.length === 0 && !showForm && <EmptyState text="Todavía no cargaste preguntas. Tocá + Pregunta para empezar." />}
+        {questions.length === 0 && !showForm && (
+          <EmptyState text="Todavía no cargaste preguntas. Tocá + Pregunta para empezar." />
+        )}
         {questions.map((q) => (
-          <View key={q.id} style={styles.row}>
-            <View style={styles.rowBody}>
-              <Text style={styles.rowTitle}>{q.text}</Text>
-              <Text style={styles.rowMeta}>
+          <View key={q.id} style={styles.bankRow}>
+            <View style={styles.bankBody}>
+              <Text style={styles.bankText}>{q.text}</Text>
+              <Text style={styles.bankMeta}>
                 {q.options.length} opciones{courseName(q.courseId) ? ` · ${courseName(q.courseId)}` : ''}
               </Text>
             </View>
@@ -158,7 +162,7 @@ function Simulacro({ questions, courses }: { questions: Question[]; courses: Cou
   const [running, setRunning] = useState<Question[] | null>(null);
   const [index, setIndex] = useState(0);
   const [selected, setSelected] = useState<number | null>(null);
-  const [score, setScore] = useState(0);
+  const [answers, setAnswers] = useState<boolean[]>([]);
   const [finished, setFinished] = useState(false);
 
   const pool = useMemo(
@@ -166,20 +170,20 @@ function Simulacro({ questions, courses }: { questions: Question[]; courses: Cou
     [questions, courseFilter]
   );
 
+  const score = answers.filter(Boolean).length;
+
   function start() {
     setRunning(shuffle(pool));
     setIndex(0);
     setSelected(null);
-    setScore(0);
+    setAnswers([]);
     setFinished(false);
   }
 
   function choose(optionIndex: number) {
     if (selected !== null || !running) return;
     setSelected(optionIndex);
-    if (optionIndex === running[index].correctIndex) {
-      setScore((s) => s + 1);
-    }
+    setAnswers((prev) => [...prev, optionIndex === running[index].correctIndex]);
   }
 
   function next() {
@@ -196,26 +200,34 @@ function Simulacro({ questions, courses }: { questions: Question[]; courses: Cou
     return (
       <ScrollView contentContainerStyle={styles.list}>
         {finished && running && (
-          <Card>
-            <Text style={styles.resultTitle}>Resultado</Text>
+          <View style={styles.result}>
+            <Label>Resultado</Label>
             <Text style={styles.resultScore}>
-              {score} / {running.length} correctas
+              {score}
+              <Text style={styles.resultOf}> / {running.length}</Text>
             </Text>
-          </Card>
+            <View style={styles.strip}>
+              {answers.map((hit, i) => (
+                <View key={i} style={[styles.stripCell, hit ? styles.stripHit : styles.stripMiss]} />
+              ))}
+            </View>
+          </View>
         )}
-        <View style={{ marginTop: spacing.md }}>
-          <Text style={styles.fieldLabel}>Curso (opcional)</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipsRow}>
-            <Chip label="Todos" selected={courseFilter === 'Todos'} onPress={() => setCourseFilter('Todos')} />
-            {courses.map((c) => (
-              <Chip key={c.id} label={c.name} selected={courseFilter === c.id} onPress={() => setCourseFilter(c.id)} />
-            ))}
-          </ScrollView>
-        </View>
+        {courses.length > 0 && (
+          <>
+            <Label>Curso (opcional)</Label>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipsRow}>
+              <Chip label="Todos" selected={courseFilter === 'Todos'} onPress={() => setCourseFilter('Todos')} />
+              {courses.map((c) => (
+                <Chip key={c.id} label={c.name} selected={courseFilter === c.id} onPress={() => setCourseFilter(c.id)} />
+              ))}
+            </ScrollView>
+          </>
+        )}
         {pool.length === 0 ? (
           <EmptyState text="No hay preguntas cargadas para este filtro todavía." />
         ) : (
-          <Button title={`Empezar simulacro (${pool.length} preguntas)`} onPress={start} />
+          <Button title={`Empezar · ${pool.length} preguntas`} onPress={start} />
         )}
       </ScrollView>
     );
@@ -225,11 +237,26 @@ function Simulacro({ questions, courses }: { questions: Question[]; courses: Cou
 
   return (
     <ScrollView contentContainerStyle={styles.list}>
-      <Text style={styles.progress}>
-        Pregunta {index + 1} / {running.length}
-      </Text>
-      <Card>
-        <Text style={styles.quizQuestion}>{q.text}</Text>
+      <View style={styles.strip}>
+        {running.map((_, i) => (
+          <View
+            key={i}
+            style={[
+              styles.stripCell,
+              i < answers.length && (answers[i] ? styles.stripHit : styles.stripMiss),
+            ]}
+          />
+        ))}
+      </View>
+
+      <View style={styles.prompt}>
+        <Text style={styles.promptNum}>
+          Pregunta {index + 1} de {running.length}
+        </Text>
+        <Text style={styles.promptText}>{q.text}</Text>
+      </View>
+
+      <View style={styles.opts}>
         {q.options.map((opt, i) => {
           const isCorrect = i === q.correctIndex;
           const isChosen = i === selected;
@@ -239,17 +266,23 @@ function Simulacro({ questions, courses }: { questions: Question[]; courses: Cou
               key={i}
               onPress={() => choose(i)}
               style={[
-                styles.quizOption,
-                revealed && isCorrect && styles.quizOptionCorrect,
-                revealed && isChosen && !isCorrect && styles.quizOptionWrong,
+                styles.opt,
+                revealed && isCorrect && styles.optRight,
+                revealed && isChosen && !isCorrect && styles.optWrong,
               ]}
             >
-              <Text style={styles.quizOptionText}>{opt}</Text>
+              <Text style={[styles.optLetter, revealed && isCorrect && styles.optLetterRight]}>{LETTERS[i]}</Text>
+              <Text style={styles.optText}>{opt}</Text>
             </Pressable>
           );
         })}
-        {selected !== null && <Button title={index + 1 >= running.length ? 'Ver resultado' : 'Siguiente'} onPress={next} />}
-      </Card>
+      </View>
+
+      {selected !== null && (
+        <View style={styles.nextWrap}>
+          <Button title={index + 1 >= running.length ? 'Ver resultado' : 'Siguiente'} onPress={next} />
+        </View>
+      )}
     </ScrollView>
   );
 }
@@ -257,69 +290,97 @@ function Simulacro({ questions, courses }: { questions: Question[]; courses: Cou
 function makeStyles(colors: Colors) {
   return StyleSheet.create({
     safe: { flex: 1, backgroundColor: colors.background },
-    header: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      paddingHorizontal: spacing.lg,
-      paddingTop: spacing.md,
-      paddingBottom: spacing.sm,
-    },
-    title: { color: colors.text, fontSize: 24, fontWeight: '700' },
-    subtitle: { color: colors.textMuted, marginTop: 2 },
-    modeRow: { flexDirection: 'row', paddingHorizontal: spacing.lg, marginBottom: spacing.sm },
+    modeRow: { flexDirection: 'row', paddingHorizontal: spacing.lg, marginBottom: spacing.xs },
     addRow: { paddingHorizontal: spacing.lg, marginBottom: spacing.sm },
-    fieldLabel: { color: colors.textMuted, fontSize: 13, marginBottom: spacing.xs },
-    chipsRow: { marginBottom: spacing.md },
+    chipsRow: { marginBottom: spacing.sm },
     list: { paddingHorizontal: spacing.lg, paddingBottom: spacing.xl },
-    optionRow: { flexDirection: 'row', alignItems: 'center', marginBottom: spacing.sm },
-    radio: {
-      width: 20,
-      height: 20,
-      borderRadius: 10,
-      borderWidth: 2,
+
+    strip: { flexDirection: 'row', gap: 3, marginBottom: spacing.md },
+    stripCell: { flex: 1, height: 4, borderRadius: 2, backgroundColor: colors.surfaceAlt },
+    stripHit: { backgroundColor: colors.ok },
+    stripMiss: { backgroundColor: colors.accent },
+
+    prompt: {
+      backgroundColor: colors.surface,
+      borderWidth: 1,
       borderColor: colors.border,
-      marginRight: spacing.sm,
+      borderLeftWidth: 3,
+      borderLeftColor: colors.accent,
+      borderRadius: radius.sm,
+      padding: spacing.md,
+      marginBottom: spacing.md,
     },
-    radioSelected: { backgroundColor: colors.accent, borderColor: colors.accent },
+    promptNum: { fontFamily: mono, fontSize: 10, letterSpacing: 1.2, textTransform: 'uppercase', color: colors.accent },
+    promptText: { color: colors.text, fontSize: 16, fontWeight: '600', lineHeight: 22, marginTop: spacing.xs },
+
+    opts: { gap: spacing.sm },
+    opt: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.md,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.surfaceAlt,
+      borderRadius: radius.sm,
+      paddingVertical: spacing.md,
+      paddingHorizontal: spacing.md,
+    },
+    optRight: { borderColor: colors.ok, backgroundColor: colors.accentMuted },
+    optWrong: { borderColor: colors.danger },
+    optLetter: { fontFamily: mono, fontSize: 12, color: colors.textMuted, fontWeight: '700' },
+    optLetterRight: { color: colors.ok },
+    optText: { color: colors.text, fontSize: 14, flex: 1 },
+
+    nextWrap: { marginTop: spacing.md },
+
+    result: {
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: radius.md,
+      padding: spacing.md,
+      marginBottom: spacing.md,
+    },
+    resultScore: { fontFamily: mono, fontSize: 34, fontWeight: '700', color: colors.text, lineHeight: 38 },
+    resultOf: { fontSize: 17, color: colors.textMuted },
+
+    optionRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.sm },
+    radio: {
+      width: 28,
+      height: 28,
+      borderRadius: radius.sm,
+      borderWidth: 1.5,
+      borderColor: colors.border,
+      backgroundColor: colors.surfaceAlt,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    radioSelected: { borderColor: colors.accent, backgroundColor: colors.accentMuted },
+    radioText: { fontFamily: mono, fontSize: 12, fontWeight: '700', color: colors.textMuted },
+    radioTextSelected: { color: colors.accent },
     optionInput: {
       flex: 1,
       backgroundColor: colors.surfaceAlt,
-      borderRadius: 8,
+      borderRadius: radius.sm,
       borderWidth: 1,
       borderColor: colors.border,
       color: colors.text,
       paddingHorizontal: spacing.md,
       paddingVertical: spacing.sm,
+      fontSize: 14,
     },
-    row: {
+
+    bankRow: {
       flexDirection: 'row',
       alignItems: 'flex-start',
-      backgroundColor: colors.surface,
-      borderWidth: 1,
-      borderColor: colors.border,
-      borderRadius: 12,
-      padding: spacing.md,
-      marginBottom: spacing.sm,
+      gap: spacing.md,
+      paddingVertical: spacing.md,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
     },
-    rowBody: { flex: 1 },
-    rowTitle: { color: colors.text, fontSize: 15, fontWeight: '600' },
-    rowMeta: { color: colors.textMuted, fontSize: 12, marginTop: 2 },
-    remove: { color: colors.textMuted, fontSize: 16, paddingHorizontal: spacing.xs },
-    progress: { color: colors.textMuted, marginBottom: spacing.sm },
-    quizQuestion: { color: colors.text, fontSize: 17, fontWeight: '600', marginBottom: spacing.md },
-    quizOption: {
-      borderWidth: 1,
-      borderColor: colors.border,
-      backgroundColor: colors.surfaceAlt,
-      borderRadius: 8,
-      padding: spacing.md,
-      marginBottom: spacing.sm,
-    },
-    quizOptionCorrect: { borderColor: colors.accent, backgroundColor: colors.accentMuted },
-    quizOptionWrong: { borderColor: colors.danger, backgroundColor: colors.surfaceAlt },
-    quizOptionText: { color: colors.text },
-    resultTitle: { color: colors.textMuted, fontSize: 14 },
-    resultScore: { color: colors.text, fontSize: 22, fontWeight: '700', marginTop: spacing.xs },
+    bankBody: { flex: 1 },
+    bankText: { color: colors.text, fontSize: 14, lineHeight: 19 },
+    bankMeta: { fontFamily: mono, fontSize: 10, letterSpacing: 0.8, textTransform: 'uppercase', color: colors.textMuted, marginTop: 3 },
+    remove: { color: colors.textMuted, fontSize: 15, paddingHorizontal: spacing.xs },
   });
 }
