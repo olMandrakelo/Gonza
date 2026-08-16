@@ -19,13 +19,24 @@ There is no test suite yet.
 
 ## Architecture
 
-- `App.tsx` — root component; wraps everything in `ThemeProvider` and sets up `NavigationContainer` with a bottom
-  tab navigator (5 tabs, one per screen). Nav theme, tab bar colors, and the status bar style all read from
-  `useTheme()` so they follow the active theme live.
-- `src/types.ts` — shared domain types: `GearItem`, `Course`, `Material`, `Question`.
+- `App.tsx` — root component; before rendering anything it awaits `seedGearIfNeeded()` (see below), then wraps
+  everything in `ThemeProvider` and sets up `NavigationContainer` with a bottom tab navigator (6 tabs, one per
+  screen). Nav theme, tab bar colors, and the status bar style all read from `useTheme()` so they follow the active
+  theme live; the tab bar height/padding add `useSafeAreaInsets().bottom` so it doesn't sit under Android's
+  gesture/button nav.
+- `src/types.ts` — shared domain types: `GearItem`, `Course`, `Material`, `Question`, `FamilyMember`, `FamilyPlan`
+  (an `address` plus four `EvacuationRoute`s labelled A–D, each a meeting point + evacuation plan — `emptyFamilyPlan()`
+  builds the blank shape).
 - `src/storage.ts` — `useStorageList<T>(key)`, a generic hook giving `{ items, loading, addItem, updateItem, removeItem }`
   backed by AsyncStorage, JSON-serialized under one storage key per entity list. All screens use this instead of a
   custom backend/database — add new entity types by defining a type in `types.ts` and calling the hook with a new key.
+  `useStorageObject<T>(key, empty)` is the same idea for a single record instead of a list (used for `FamilyPlan`,
+  which has one fixed shape rather than add/remove entries).
+- `src/seedData.ts` — `seedGearIfNeeded()`, called once from `App.tsx` before the first screen mounts. Writes a
+  starter checklist (consolidated from the "Día Cero" 72h family-bag guide) directly to `gonza:gear` in AsyncStorage
+  only if that list is still empty, then sets a flag so it never runs again — it will not resurrect items a user
+  deleted. It writes directly rather than looping `addItem`, since looping would race `useStorageList`'s closured
+  `items` state and silently drop all but the last write.
 - `src/ui/theme.ts` — spacing/radius tokens, dark/light base palettes, and the accent presets (`ACCENT_PRESETS`:
   `senal` / `oliva` / `arena` / `acero`); `buildColors(scheme, accentKey)` combines them into the active `Colors`.
   Also exports `mono` (the platform monospace face used for titles, labels and figures), `progressColor(colors, ratio)`
@@ -51,6 +62,9 @@ There is no test suite yet.
   - `MaterialScreen.tsx` — study notes/links, optionally linked to a course.
   - `QuizScreen.tsx` — question bank (CRUD) plus a "Simulacro" mode that runs a shuffled quiz over all or
     course-filtered questions and scores it.
+  - `FamilyScreen.tsx` — two modes: `Integrantes` (CRUD list of `FamilyMember`, one per person: contacts, blood
+    type, allergies) and `Plan de emergencia` (the single `FamilyPlan` — address plus routes A–D). The plan is
+    edited as local draft state and written in one `save()` call from an explicit button, not per-keystroke.
   - `SettingsScreen.tsx` — theme mode and accent color picker, backed by `useTheme()`.
 
 Screens follow the same pattern for theme-aware styles: read `colors` from `useTheme()`, then

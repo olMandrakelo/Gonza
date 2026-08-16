@@ -59,3 +59,35 @@ export interface Question {
   correctIndex: number;
   courseId?: string;
 }
+
+export interface FamilyMember {
+  id: string;
+  name: string;
+  phone1?: string;
+  phone2?: string;
+  birthDate?: string;
+  bloodType?: string;
+  allergies?: string;
+  notes?: string;
+}
+
+export const ROUTE_LABELS = ['A', 'B', 'C', 'D'] as const;
+export type RouteLabel = (typeof ROUTE_LABELS)[number];
+
+export interface EvacuationRoute {
+  label: RouteLabel;
+  meetingPoint: string;
+  plan: string;
+}
+
+export interface FamilyPlan {
+  address: string;
+  routes: EvacuationRoute[];
+}
+
+export function emptyFamilyPlan(): FamilyPlan {
+  return {
+    address: '',
+    routes: ROUTE_LABELS.map((label) => ({ label, meetingPoint: '', plan: '' })),
+  };
+}

@@ -1,12 +1,15 @@
 import { NavigationContainer, DarkTheme, DefaultTheme } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { StatusBar } from 'expo-status-bar';
+import { useEffect, useState } from 'react';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import ChecklistScreen from './src/screens/ChecklistScreen';
 import CoursesScreen from './src/screens/CoursesScreen';
+import FamilyScreen from './src/screens/FamilyScreen';
 import MaterialScreen from './src/screens/MaterialScreen';
 import QuizScreen from './src/screens/QuizScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
+import { seedGearIfNeeded } from './src/seedData';
 import { ThemeProvider, useTheme } from './src/ui/ThemeContext';
 import { TAB_ICONS } from './src/ui/icons';
 import { mono } from './src/ui/theme';
@@ -60,6 +63,7 @@ function Navigation() {
           <Tab.Screen name="Cursos" component={CoursesScreen} />
           <Tab.Screen name="Práctica" component={QuizScreen} />
           <Tab.Screen name="Material" component={MaterialScreen} />
+          <Tab.Screen name="Familia" component={FamilyScreen} />
           <Tab.Screen name="Ajustes" component={SettingsScreen} />
         </Tab.Navigator>
       </NavigationContainer>
@@ -69,6 +73,16 @@ function Navigation() {
 }
 
 export default function App() {
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    seedGearIfNeeded().finally(() => setReady(true));
+  }, []);
+
+  // Seeding must land in AsyncStorage before ChecklistScreen's useStorageList reads it,
+  // otherwise it'd read the pre-seed empty list once and never see the seeded items.
+  if (!ready) return null;
+
   return (
     <SafeAreaProvider>
       <ThemeProvider>

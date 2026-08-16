@@ -103,10 +103,47 @@ export function SlidersIcon({ color, bg }: IconProps) {
   );
 }
 
+/** Two overlapping figures — family. */
+export function FamilyIcon({ color, bg }: IconProps) {
+  const head = (size: number) => ({
+    width: size,
+    height: size,
+    borderRadius: size / 2,
+    borderWidth: STROKE,
+    borderColor: color,
+    backgroundColor: bg,
+  });
+  const body = (w: number, h: number) => ({
+    width: w,
+    height: h,
+    borderWidth: STROKE,
+    borderColor: color,
+    backgroundColor: bg,
+    borderTopLeftRadius: w / 2,
+    borderTopRightRadius: w / 2,
+    borderBottomWidth: 0,
+  });
+  return (
+    <Box>
+      <View style={{ width: 20, height: 18 }}>
+        <View style={{ position: 'absolute', left: 0, bottom: 0, alignItems: 'center' }}>
+          <View style={head(6)} />
+          <View style={[body(11, 7), { marginTop: 1 }]} />
+        </View>
+        <View style={{ position: 'absolute', right: 0, bottom: 0, alignItems: 'center' }}>
+          <View style={head(6)} />
+          <View style={[body(11, 7), { marginTop: 1 }]} />
+        </View>
+      </View>
+    </Box>
+  );
+}
+
 export const TAB_ICONS: Record<string, React.ComponentType<IconProps>> = {
   Equipo: BackpackIcon,
   Cursos: BookIcon,
   Práctica: TargetIcon,
   Material: DocIcon,
+  Familia: FamilyIcon,
   Ajustes: SlidersIcon,
 };
