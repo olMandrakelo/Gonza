@@ -45,8 +45,23 @@ Screens follow the same pattern for theme-aware styles: read `colors` from `useT
 returning `StyleSheet.create(...)`. Don't build a `StyleSheet` from a static color import at module scope — it won't
 react to theme changes.
 
+## Distribution & updates
+
+The app is distributed as a standalone Android APK (`eas build --platform android --profile preview`, see `eas.json`)
+installed directly on family members' phones — not through Expo Go or the Play Store. JS/asset-only changes ship as
+**OTA updates** via `expo-updates`: `.github/workflows/eas-update.yml` runs `eas update --branch preview` on every
+push to `claude/preparacionistas-app-d9fljw`, and installed apps pick it up automatically on next launch (no
+reinstall, no PC). This requires an `EXPO_TOKEN` repo secret tied to the Expo account that owns the project.
+
+`runtimeVersion` uses the `appVersion` policy (`app.json`), so an OTA update only applies to installs whose native
+`version` matches. That means:
+- Bumping `expo.version` in `app.json`, or any native-level change (new native dependency, permissions, app icon,
+  package name) requires a fresh `eas build` — the "one more PC session" case — since existing installs can't pick
+  those up over the air.
+- Everything else (screens, styles, logic, the theme system) ships as a plain OTA update once the above CI is set up.
+
 ## Conventions
 
 - UI copy is in Spanish (Argentina), matching the target user.
-- Keep new entities local-first: no network calls, no auth. If a backend is ever introduced, treat it as a deliberate
-  scope change, not an incidental addition.
+- Keep new entities local-first: no network calls, no auth beyond what's needed for EAS builds/updates. If a backend
+  is ever introduced for app data, treat it as a deliberate scope change, not an incidental addition.
