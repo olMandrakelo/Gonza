@@ -2,6 +2,7 @@
   "expo": {
     "name": "Preparacionista",
     "slug": "preparacionista",
+    "owner": "mandrake0583",
     "version": "1.1.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -25,6 +26,14 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "c490db86-e5d2-4e6f-919f-00c94b257925"
+      }
+    },
+    "updates": {
+      "url": "https://u.expo.dev/c490db86-e5d2-4e6f-919f-00c94b257925"
     }
   }
 }
