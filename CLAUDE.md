@@ -39,6 +39,11 @@ There is no test suite yet.
 - `src/ui/icons.tsx` — tab icons built from plain `View`s (borders and radii), not SVG or an icon font. Both of those
   are native modules: adding one would force a fresh `eas build` and break the over-the-air update path, so icon work
   must stay within RN primitives unless a native rebuild is already planned.
+- `src/ui/appIcon.ts` — launcher-icon switching over `expo-alternate-app-icons`. The `require` is guarded and every
+  call no-ops when the native module is absent, so an OTA update can't crash an older install; the Ajustes section
+  only renders when `iconsSupported()` is true. The alternates themselves are declared in the `app.json` plugin
+  entry — adding or renaming one is a native change and needs a rebuild, but switching between the declared ones is
+  instant and offline.
 - `src/screens/`
   - `ChecklistScreen.tsx` — gear/supplies checklist. Two levels: a `resumen` view (readiness percentage, segmented
     `Meter`, and one `Bar` per category) drills into a single category's item list, or into all items.
@@ -62,7 +67,9 @@ push to `claude/preparacionistas-app-d9fljw`, and installed apps pick it up auto
 reinstall, no PC). This requires an `EXPO_TOKEN` repo secret tied to the Expo account that owns the project.
 
 `runtimeVersion` uses the `appVersion` policy (`app.json`), so an OTA update only applies to installs whose native
-`version` matches. That means:
+`version` matches. Use that deliberately: when a change adds or depends on a native module, bump `expo.version` in
+the same commit so the update cannot reach older installs that lack the module. That is why shipping the icon
+switcher moved the app to 1.2.0. That means:
 - Bumping `expo.version` in `app.json`, or any native-level change (new native dependency, permissions, app icon,
   package name) requires a fresh `eas build` — the "one more PC session" case — since existing installs can't pick
   those up over the air.
