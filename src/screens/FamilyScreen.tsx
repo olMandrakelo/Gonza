@@ -32,8 +32,9 @@ export default function FamilyScreen() {
 function Members() {
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
-  const { items, addItem, removeItem } = useStorageList<FamilyMember>('gonza:family');
+  const { items, addItem, updateItem, removeItem } = useStorageList<FamilyMember>('gonza:family');
   const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [name, setName] = useState('');
   const [phone1, setPhone1] = useState('');
   const [phone2, setPhone2] = useState('');
@@ -50,12 +51,25 @@ function Members() {
     setBloodType('');
     setAllergies('');
     setNotes('');
+    setEditingId(null);
     setShowForm(false);
   }
 
-  async function handleAdd() {
+  function startEdit(m: FamilyMember) {
+    setEditingId(m.id);
+    setName(m.name);
+    setPhone1(m.phone1 ?? '');
+    setPhone2(m.phone2 ?? '');
+    setBirthDate(m.birthDate ?? '');
+    setBloodType(m.bloodType ?? '');
+    setAllergies(m.allergies ?? '');
+    setNotes(m.notes ?? '');
+    setShowForm(true);
+  }
+
+  async function handleSave() {
     if (!name.trim()) return;
-    await addItem({
+    const patch = {
       name: name.trim(),
       phone1: phone1.trim() || undefined,
       phone2: phone2.trim() || undefined,
@@ -63,14 +77,22 @@ function Members() {
       bloodType: bloodType.trim() || undefined,
       allergies: allergies.trim() || undefined,
       notes: notes.trim() || undefined,
-    });
+    };
+    if (editingId) {
+      await updateItem(editingId, patch);
+    } else {
+      await addItem(patch);
+    }
     resetForm();
   }
 
   return (
     <>
       <View style={styles.addRow}>
-        <Button title={showForm ? 'Cerrar' : '+ Persona'} onPress={() => setShowForm((v) => !v)} />
+        <Button
+          title={showForm ? 'Cerrar' : '+ Persona'}
+          onPress={() => (showForm ? resetForm() : setShowForm(true))}
+        />
       </View>
       <ScrollView contentContainerStyle={styles.list}>
         {showForm && (
@@ -89,14 +111,14 @@ function Members() {
               numberOfLines={3}
               style={{ minHeight: 70, textAlignVertical: 'top' }}
             />
-            <Button title="Guardar" onPress={handleAdd} />
+            <Button title={editingId ? 'Guardar cambios' : 'Guardar'} onPress={handleSave} />
           </Card>
         )}
         {items.length === 0 && !showForm && (
           <EmptyState text="Todavía no cargaste a nadie. Tocá + Persona para empezar." />
         )}
         {items.map((m) => (
-          <View key={m.id} style={styles.memberRow}>
+          <Pressable key={m.id} style={styles.memberRow} onPress={() => startEdit(m)}>
             <View style={styles.memberBody}>
               <Text style={styles.memberName}>{m.name}</Text>
               <Text style={styles.memberMeta}>
@@ -107,7 +129,7 @@ function Members() {
             <Pressable hitSlop={12} onPress={() => removeItem(m.id)}>
               <Text style={styles.remove}>✕</Text>
             </Pressable>
-          </View>
+          </Pressable>
         ))}
       </ScrollView>
     </>
