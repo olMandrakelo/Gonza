@@ -57,16 +57,27 @@ export default function ChecklistScreen() {
   // left to undo (already at the resumen), fall back to "press again to exit" instead of
   // quitting on a single accidental tap — Equipo is the app's first tab, so a bare back press
   // here has nowhere else in the app to go.
+  //
+  // The listener itself is registered once (stable empty deps) and reads current state through
+  // refs rather than resubscribing on every state change — a stale closure from a resubscribe
+  // race is a more likely culprit for "back exits even mid-category" than it looks on paper.
+  const pickerOpenRef = useRef(pickerOpen);
+  const showFormRef = useRef(showForm);
+  const viewRef = useRef(view);
+  pickerOpenRef.current = pickerOpen;
+  showFormRef.current = showForm;
+  viewRef.current = view;
   const lastBackPress = useRef(0);
+
   useFocusEffect(
     useCallback(() => {
       const onBack = () => {
-        if (pickerOpen) return false;
-        if (showForm) {
+        if (pickerOpenRef.current) return false;
+        if (showFormRef.current) {
           setShowForm(false);
           return true;
         }
-        if (view !== 'resumen') {
+        if (viewRef.current !== 'resumen') {
           setView('resumen');
           return true;
         }
@@ -83,7 +94,7 @@ export default function ChecklistScreen() {
       };
       const sub = BackHandler.addEventListener('hardwareBackPress', onBack);
       return () => sub.remove();
-    }, [pickerOpen, showForm, view])
+    }, [])
   );
 
   async function handleAdd() {
