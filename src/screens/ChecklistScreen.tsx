@@ -1,5 +1,5 @@
-import React, { useCallback, useMemo, useState } from 'react';
-import { BackHandler, FlatList, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
+import { BackHandler, FlatList, Platform, Pressable, ScrollView, StyleSheet, Text, ToastAndroid, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { Bar, Button, Card, Chip, EmptyState, Field, Label, Meter, Screen, ScreenHeader } from '../ui/components';
@@ -53,7 +53,11 @@ export default function ChecklistScreen() {
   // The category drill-down and the add form are local state, not navigation-stack entries, so
   // Android's hardware back button doesn't know about them by default and exits the app instead
   // of stepping back one level. Intercept it here, in priority order; the item picker's own
-  // Modal already handles back on its own, so defer to it when it's open.
+  // Modal already handles back on its own, so defer to it when it's open. Once there's nothing
+  // left to undo (already at the resumen), fall back to "press again to exit" instead of
+  // quitting on a single accidental tap — Equipo is the app's first tab, so a bare back press
+  // here has nowhere else in the app to go.
+  const lastBackPress = useRef(0);
   useFocusEffect(
     useCallback(() => {
       const onBack = () => {
@@ -64,6 +68,15 @@ export default function ChecklistScreen() {
         }
         if (view !== 'resumen') {
           setView('resumen');
+          return true;
+        }
+        if (Platform.OS === 'android') {
+          const now = Date.now();
+          if (now - lastBackPress.current < 2000) {
+            return false;
+          }
+          lastBackPress.current = now;
+          ToastAndroid.show('Tocá de nuevo para salir', ToastAndroid.SHORT);
           return true;
         }
         return false;
