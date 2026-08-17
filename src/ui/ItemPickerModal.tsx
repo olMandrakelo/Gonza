@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Modal, Pressable, SectionList, StyleSheet, Text, TextInput, View } from 'react-native';
+import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CatalogItem } from '../catalog';
 import { GEAR_CATEGORIES } from '../types';
 import { useTheme } from './ThemeContext';
@@ -7,8 +8,28 @@ import { Colors, mono, radius, spacing } from './theme';
 
 /** Bottom-sheet item picker: search + tap-to-select, grouped by category. Built on RN's own
  * Modal/SectionList — no extra dependency, so this ships as a plain OTA update. */
-export function ItemPickerModal({
-  visible,
+export function ItemPickerModal(props: {
+  visible: boolean;
+  onClose: () => void;
+  onSelect: (item: CatalogItem) => void;
+  catalog: CatalogItem[];
+}) {
+  return (
+    <Modal visible={props.visible} animationType="slide" transparent onRequestClose={props.onClose}>
+      {/*
+       * RN's Modal renders into its own native window/surface, which the outer SafeAreaProvider
+       * (mounted once at the app root) doesn't reliably measure — its insets can read as 0 here
+       * even on a device with on-screen nav buttons. Nesting a fresh provider makes this Modal
+       * measure its own surface directly, so Sheet's useSafeAreaInsets() below is accurate.
+       */}
+      <SafeAreaProvider>
+        <Sheet {...props} />
+      </SafeAreaProvider>
+    </Modal>
+  );
+}
+
+function Sheet({
   onClose,
   onSelect,
   catalog,
@@ -19,6 +40,7 @@ export function ItemPickerModal({
   catalog: CatalogItem[];
 }) {
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const [query, setQuery] = useState('');
 
@@ -42,39 +64,38 @@ export function ItemPickerModal({
   }
 
   return (
-    <Modal visible={visible} animationType="slide" transparent onRequestClose={handleClose}>
-      <View style={styles.overlay}>
-        <Pressable style={styles.backdrop} onPress={handleClose} />
-        <View style={styles.sheet}>
-          <View style={styles.headerRow}>
-            <Text style={styles.title}>Elegí un ítem</Text>
-            <Pressable hitSlop={12} onPress={handleClose}>
-              <Text style={styles.close}>✕</Text>
-            </Pressable>
-          </View>
-          <TextInput
-            style={styles.search}
-            placeholder="Buscar…"
-            placeholderTextColor={colors.textMuted}
-            value={query}
-            onChangeText={setQuery}
-            autoFocus
-          />
-          <SectionList
-            sections={sections}
-            keyExtractor={(item, i) => item.category + item.name + i}
-            keyboardShouldPersistTaps="handled"
-            renderSectionHeader={({ section }) => <Text style={styles.sectionHeader}>{section.title}</Text>}
-            renderItem={({ item }) => (
-              <Pressable style={styles.row} onPress={() => handleSelect(item)}>
-                <Text style={styles.rowText}>{item.name}</Text>
-              </Pressable>
-            )}
-            ListEmptyComponent={<Text style={styles.empty}>No encontramos nada con ese nombre.</Text>}
-          />
+    <View style={styles.overlay}>
+      <Pressable style={styles.backdrop} onPress={handleClose} />
+      <View style={[styles.sheet, { marginBottom: insets.bottom }]}>
+        <View style={styles.headerRow}>
+          <Text style={styles.title}>Elegí un ítem</Text>
+          <Pressable hitSlop={12} onPress={handleClose}>
+            <Text style={styles.close}>✕</Text>
+          </Pressable>
         </View>
+        <TextInput
+          style={styles.search}
+          placeholder="Buscar…"
+          placeholderTextColor={colors.textMuted}
+          value={query}
+          onChangeText={setQuery}
+          autoFocus
+        />
+        <SectionList
+          sections={sections}
+          keyExtractor={(item, i) => item.category + item.name + i}
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={{ paddingBottom: spacing.xl }}
+          renderSectionHeader={({ section }) => <Text style={styles.sectionHeader}>{section.title}</Text>}
+          renderItem={({ item }) => (
+            <Pressable style={styles.row} onPress={() => handleSelect(item)}>
+              <Text style={styles.rowText}>{item.name}</Text>
+            </Pressable>
+          )}
+          ListEmptyComponent={<Text style={styles.empty}>No encontramos nada con ese nombre.</Text>}
+        />
       </View>
-    </Modal>
+    </View>
   );
 }
 
