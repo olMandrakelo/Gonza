@@ -2,11 +2,13 @@ import React, { useMemo, useState } from 'react';
 import { FlatList, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Bar, Button, Card, Chip, EmptyState, Field, Label, Meter, Screen, ScreenHeader } from '../ui/components';
+import { ItemPickerModal } from '../ui/ItemPickerModal';
 import { useTheme } from '../ui/ThemeContext';
 import { Colors, mono, progressColor, radius, spacing } from '../ui/theme';
 import { useStorageList } from '../storage';
 import { GEAR_CATEGORIES, GearCategory, GearItem } from '../types';
 import { SEED_ITEMS } from '../seedData';
+import { CATALOG_ITEMS } from '../catalog';
 
 /** 'resumen' shows readiness + per-category bars; anything else is a filtered item list. */
 type View_ = 'resumen' | 'todos' | GearCategory;
@@ -17,6 +19,7 @@ export default function ChecklistScreen() {
   const { items, loading, addItem, addMany, updateItem, removeItem } = useStorageList<GearItem>('gonza:gear');
   const [view, setView] = useState<View_>('resumen');
   const [showForm, setShowForm] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
   const [name, setName] = useState('');
   const [category, setCategory] = useState<GearCategory>('Otros');
   const [quantity, setQuantity] = useState('');
@@ -77,6 +80,8 @@ export default function ChecklistScreen() {
         {showForm && (
           <View style={styles.formWrap}>
             <Card>
+              <Button title="Elegir de la lista" variant="secondary" onPress={() => setPickerOpen(true)} />
+              <View style={styles.pickerGap} />
               <Field label="Nombre" value={name} onChangeText={setName} placeholder="Ej: Filtro de agua" />
               <Label>Categoría</Label>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipsRow}>
@@ -166,6 +171,16 @@ export default function ChecklistScreen() {
           />
         )}
       </Screen>
+      <ItemPickerModal
+        visible={pickerOpen}
+        onClose={() => setPickerOpen(false)}
+        catalog={CATALOG_ITEMS}
+        onSelect={(item) => {
+          setName(item.name);
+          setCategory(item.category);
+          setPickerOpen(false);
+        }}
+      />
     </SafeAreaView>
   );
 }
@@ -176,6 +191,7 @@ function makeStyles(colors: Colors) {
     back: { paddingHorizontal: spacing.lg, paddingBottom: spacing.sm },
     backText: { fontFamily: mono, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', color: colors.accent },
     formWrap: { paddingHorizontal: spacing.lg },
+    pickerGap: { height: spacing.md },
     chipsRow: { marginBottom: spacing.sm },
     list: { paddingHorizontal: spacing.lg, paddingBottom: spacing.xl },
 
