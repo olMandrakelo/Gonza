@@ -7,23 +7,41 @@ import { ItemPickerModal } from '../ui/ItemPickerModal';
 import { useTheme } from '../ui/ThemeContext';
 import { Colors, mono, progressColor, radius, spacing } from '../ui/theme';
 import { useStorageList } from '../storage';
-import { GEAR_CATEGORIES, GearCategory, GearItem } from '../types';
+import { Bag, GEAR_CATEGORIES, GearCategory, GearItem } from '../types';
 import { SEED_ITEMS } from '../seedData';
 import { CATALOG_ITEMS } from '../catalog';
 
-/** 'resumen' shows readiness + per-category bars; anything else is a filtered item list. */
-type View_ = 'resumen' | 'todos' | GearCategory;
+/** Sentinel bag id for items with no bag assigned, so they still show up in "por mochila". */
+const UNASSIGNED = '__sin_mochila__';
+
+type GroupMode = 'categoria' | 'mochila';
+
+/** 'resumen' shows readiness + grouped bars; 'todos' and the category/bag variants are
+ * filtered item lists — one screen, no navigation-stack entries. */
+type ViewMode =
+  | { kind: 'resumen' }
+  | { kind: 'todos' }
+  | { kind: 'category'; value: GearCategory }
+  | { kind: 'bag'; value: string };
 
 export default function ChecklistScreen() {
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const { items, loading, addItem, addMany, updateItem, removeItem } = useStorageList<GearItem>('gonza:gear');
-  const [view, setView] = useState<View_>('resumen');
+  const { items: bags, addItem: addBag, removeItem: removeBag } = useStorageList<Bag>('gonza:bags');
+
+  const [view, setView] = useState<ViewMode>({ kind: 'resumen' });
+  const [groupMode, setGroupMode] = useState<GroupMode>('categoria');
   const [showForm, setShowForm] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [name, setName] = useState('');
   const [category, setCategory] = useState<GearCategory>('Otros');
   const [quantity, setQuantity] = useState('');
+  const [bagId, setBagId] = useState<string | undefined>(undefined);
+
+  const [showBagForm, setShowBagForm] = useState(false);
+  const [bagName, setBagName] = useState('');
+  const [bagEmoji, setBagEmoji] = useState('');
 
   const have = items.filter((it) => it.have).length;
   const ratio = items.length ? have / items.length : 0;
@@ -32,35 +50,59 @@ export default function ChecklistScreen() {
     () =>
       GEAR_CATEGORIES.map((c) => {
         const list = items.filter((it) => it.category === c);
-        return { category: c, total: list.length, done: list.filter((it) => it.have).length };
+        return { key: c, label: c, total: list.length, done: list.filter((it) => it.have).length };
       }).filter((row) => row.total > 0),
     [items]
   );
 
+  const byBag = useMemo(() => {
+    const bagIds = new Set(bags.map((b) => b.id));
+    const rows = bags.map((b) => {
+      const list = items.filter((it) => it.bagId === b.id);
+      return { key: b.id, label: b.emoji ? `${b.emoji} ${b.name}` : b.name, total: list.length, done: list.filter((it) => it.have).length };
+    });
+    const unassigned = items.filter((it) => !it.bagId || !bagIds.has(it.bagId));
+    if (unassigned.length > 0) {
+      rows.push({
+        key: UNASSIGNED,
+        label: 'Sin mochila',
+        total: unassigned.length,
+        done: unassigned.filter((it) => it.have).length,
+      });
+    }
+    return rows;
+  }, [items, bags]);
+
   const listed = useMemo(() => {
-    if (view === 'resumen') return [];
-    if (view === 'todos') return items;
-    return items.filter((it) => it.category === view);
-  }, [items, view]);
+    if (view.kind === 'todos') return items;
+    if (view.kind === 'category') return items.filter((it) => it.category === view.value);
+    if (view.kind === 'bag') {
+      const bagIds = new Set(bags.map((b) => b.id));
+      if (view.value === UNASSIGNED) return items.filter((it) => !it.bagId || !bagIds.has(it.bagId));
+      return items.filter((it) => it.bagId === view.value);
+    }
+    return [];
+  }, [items, bags, view]);
 
   function resetForm() {
     setName('');
     setCategory('Otros');
     setQuantity('');
+    setBagId(undefined);
     setShowForm(false);
   }
 
-  // The category drill-down and the add form are local state, not navigation-stack entries, so
-  // Android's hardware back button doesn't know about them by default and exits the app instead
-  // of stepping back one level. Intercept it here, in priority order; the item picker's own
-  // Modal already handles back on its own, so defer to it when it's open. Once there's nothing
-  // left to undo (already at the resumen), fall back to "press again to exit" instead of
+  // The category/bag drill-down and the add form are local state, not navigation-stack entries,
+  // so Android's hardware back button doesn't know about them by default and exits the app
+  // instead of stepping back one level. Intercept it here, in priority order; the item picker's
+  // own Modal already handles back on its own, so defer to it when it's open. Once there's
+  // nothing left to undo (already at the resumen), fall back to "press again to exit" instead of
   // quitting on a single accidental tap — Equipo is the app's first tab, so a bare back press
   // here has nowhere else in the app to go.
   //
   // The listener itself is registered once (stable empty deps) and reads current state through
-  // refs rather than resubscribing on every state change — a stale closure from a resubscribe
-  // race is a more likely culprit for "back exits even mid-category" than it looks on paper.
+  // refs rather than resubscribing on every state change, to avoid a stale-closure/resubscribe
+  // race that could otherwise let a back press slip through to the OS mid-transition.
   const pickerOpenRef = useRef(pickerOpen);
   const showFormRef = useRef(showForm);
   const viewRef = useRef(view);
@@ -77,8 +119,8 @@ export default function ChecklistScreen() {
           setShowForm(false);
           return true;
         }
-        if (viewRef.current !== 'resumen') {
-          setView('resumen');
+        if (viewRef.current.kind !== 'resumen') {
+          setView({ kind: 'resumen' });
           return true;
         }
         if (Platform.OS === 'android') {
@@ -99,28 +141,39 @@ export default function ChecklistScreen() {
 
   async function handleAdd() {
     if (!name.trim()) return;
-    await addItem({ name: name.trim(), category, have: false, quantity: quantity.trim() || undefined });
+    await addItem({ name: name.trim(), category, have: false, quantity: quantity.trim() || undefined, bagId });
     resetForm();
   }
 
+  async function handleAddBag() {
+    if (!bagName.trim()) return;
+    await addBag({ name: bagName.trim(), emoji: bagEmoji.trim() || undefined });
+    setBagName('');
+    setBagEmoji('');
+    setShowBagForm(false);
+  }
+
+  const bagTitle = (id: string) => (id === UNASSIGNED ? 'Sin mochila' : bags.find((b) => b.id === id)?.name ?? 'Mochila');
+
+  const title =
+    view.kind === 'resumen' ? 'Equipo' : view.kind === 'todos' ? 'Todos' : view.kind === 'category' ? view.value : bagTitle(view.value);
+
   const headerCode =
-    view === 'resumen'
+    view.kind === 'resumen'
       ? 'Sección 01 · Equipo'
-      : view === 'todos'
-        ? `Sección 01 · Todos · ${have} de ${items.length}`
-        : `Sección 01 · ${view} · ${listed.filter((i) => i.have).length} de ${listed.length}`;
+      : `Sección 01 · ${title} · ${listed.filter((i) => i.have).length} de ${listed.length}`;
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <Screen>
         <ScreenHeader
           code={loading ? 'Cargando…' : headerCode}
-          title={view === 'resumen' ? 'Equipo' : view === 'todos' ? 'Todos' : view}
+          title={title}
           right={<Button title={showForm ? 'Cerrar' : '+ Ítem'} onPress={() => setShowForm((v) => !v)} />}
         />
 
-        {view !== 'resumen' && (
-          <Pressable onPress={() => setView('resumen')} style={styles.back}>
+        {view.kind !== 'resumen' && (
+          <Pressable onPress={() => setView({ kind: 'resumen' })} style={styles.back}>
             <Text style={styles.backText}>‹ Resumen</Text>
           </Pressable>
         )}
@@ -138,12 +191,28 @@ export default function ChecklistScreen() {
                 ))}
               </ScrollView>
               <Field label="Cantidad (opcional)" value={quantity} onChangeText={setQuantity} placeholder="Ej: 2 unidades" />
+              {bags.length > 0 && (
+                <>
+                  <Label>Mochila (opcional)</Label>
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipsRow}>
+                    <Chip label="Ninguna" selected={!bagId} onPress={() => setBagId(undefined)} />
+                    {bags.map((b) => (
+                      <Chip
+                        key={b.id}
+                        label={b.emoji ? `${b.emoji} ${b.name}` : b.name}
+                        selected={bagId === b.id}
+                        onPress={() => setBagId(b.id)}
+                      />
+                    ))}
+                  </ScrollView>
+                </>
+              )}
               <Button title="Guardar" onPress={handleAdd} />
             </Card>
           </View>
         )}
 
-        {view === 'resumen' ? (
+        {view.kind === 'resumen' ? (
           <ScrollView contentContainerStyle={styles.list}>
             <View style={styles.ready}>
               <View style={styles.readyTop}>
@@ -164,7 +233,12 @@ export default function ChecklistScreen() {
               <Meter ratio={ratio} />
             </View>
 
-            {byCategory.length === 0 ? (
+            <View style={styles.groupRow}>
+              <Chip label="Por categoría" selected={groupMode === 'categoria'} onPress={() => setGroupMode('categoria')} />
+              <Chip label="Por mochila" selected={groupMode === 'mochila'} onPress={() => setGroupMode('mochila')} />
+            </View>
+
+            {items.length === 0 ? (
               <View style={styles.emptyWrap}>
                 <EmptyState text="Todavía no cargaste equipo. Tocá + Ítem para empezar." />
                 <Button
@@ -173,14 +247,14 @@ export default function ChecklistScreen() {
                   onPress={() => addMany(SEED_ITEMS.map((item) => ({ ...item, have: false })))}
                 />
               </View>
-            ) : (
+            ) : groupMode === 'categoria' ? (
               <View style={styles.cats}>
                 {byCategory.map((row) => {
                   const r = row.done / row.total;
                   return (
-                    <Pressable key={row.category} onPress={() => setView(row.category)} style={styles.catRow}>
+                    <Pressable key={row.key} onPress={() => setView({ kind: 'category', value: row.key })} style={styles.catRow}>
                       <View style={styles.catTop}>
-                        <Text style={styles.catName}>{row.category}</Text>
+                        <Text style={styles.catName}>{row.label}</Text>
                         <Text style={styles.catFrac}>
                           {row.done}/{row.total}
                         </Text>
@@ -189,9 +263,50 @@ export default function ChecklistScreen() {
                     </Pressable>
                   );
                 })}
-                <Pressable onPress={() => setView('todos')} style={styles.allRow}>
+                <Pressable onPress={() => setView({ kind: 'todos' })} style={styles.allRow}>
                   <Text style={styles.allText}>Ver todos los ítems ›</Text>
                 </Pressable>
+              </View>
+            ) : (
+              <View style={styles.cats}>
+                {byBag.map((row) => {
+                  const r = row.total > 0 ? row.done / row.total : 0;
+                  return (
+                    <Pressable key={row.key} onPress={() => setView({ kind: 'bag', value: row.key })} style={styles.catRow}>
+                      <View style={styles.catTop}>
+                        <Text style={styles.catName}>{row.label}</Text>
+                        <Text style={styles.catFrac}>
+                          {row.done}/{row.total}
+                        </Text>
+                      </View>
+                      <Bar ratio={r} color={progressColor(colors, r)} />
+                    </Pressable>
+                  );
+                })}
+
+                {showBagForm ? (
+                  <Card>
+                    <Field label="Nombre de la mochila" value={bagName} onChangeText={setBagName} placeholder="Ej: Mochila líder" />
+                    <Field label="Emoji (opcional)" value={bagEmoji} onChangeText={setBagEmoji} placeholder="🎒" />
+                    <Button title="Crear mochila" onPress={handleAddBag} />
+                  </Card>
+                ) : (
+                  <Button title="+ Mochila" variant="secondary" onPress={() => setShowBagForm(true)} />
+                )}
+
+                {bags.length > 0 && (
+                  <View style={styles.bagManage}>
+                    <Label>Mochilas creadas</Label>
+                    {bags.map((b) => (
+                      <View key={b.id} style={styles.bagManageRow}>
+                        <Text style={styles.bagManageName}>{b.emoji ? `${b.emoji} ${b.name}` : b.name}</Text>
+                        <Pressable hitSlop={12} onPress={() => removeBag(b.id)}>
+                          <Text style={styles.remove}>✕</Text>
+                        </Pressable>
+                      </View>
+                    ))}
+                  </View>
+                )}
               </View>
             )}
           </ScrollView>
@@ -200,7 +315,7 @@ export default function ChecklistScreen() {
             data={listed}
             keyExtractor={(it) => it.id}
             contentContainerStyle={styles.list}
-            ListEmptyComponent={<EmptyState text="No hay ítems en esta categoría todavía." />}
+            ListEmptyComponent={<EmptyState text="No hay ítems acá todavía." />}
             renderItem={({ item }) => (
               <Pressable style={styles.item} onPress={() => updateItem(item.id, { have: !item.have })}>
                 <View style={[styles.box, item.have && styles.boxDone]}>
@@ -208,7 +323,7 @@ export default function ChecklistScreen() {
                 </View>
                 <View style={styles.itemBody}>
                   <Text style={[styles.itemName, item.have && styles.itemNameDone]}>{item.name}</Text>
-                  {view === 'todos' && <Text style={styles.itemCat}>{item.category}</Text>}
+                  {(view.kind === 'todos' || view.kind === 'bag') && <Text style={styles.itemCat}>{item.category}</Text>}
                   {item.quantity ? <Text style={styles.itemQuantity}>{item.quantity}</Text> : null}
                 </View>
                 <Pressable hitSlop={12} onPress={() => removeItem(item.id)}>
@@ -258,6 +373,8 @@ function makeStyles(colors: Colors) {
     readySideText: { fontFamily: mono, fontSize: 11, color: colors.textMuted, lineHeight: 17 },
     readySideStrong: { color: colors.text, fontWeight: '700' },
 
+    groupRow: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.md },
+
     emptyWrap: { gap: spacing.md },
     cats: { gap: spacing.md },
     catRow: { gap: spacing.xs },
@@ -266,6 +383,17 @@ function makeStyles(colors: Colors) {
     catFrac: { fontFamily: mono, fontSize: 11, color: colors.textMuted },
     allRow: { paddingTop: spacing.sm },
     allText: { fontFamily: mono, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', color: colors.accent },
+
+    bagManage: { marginTop: spacing.sm, gap: spacing.sm },
+    bagManageRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingVertical: spacing.sm,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    bagManageName: { color: colors.text, fontSize: 14 },
 
     item: {
       flexDirection: 'row',

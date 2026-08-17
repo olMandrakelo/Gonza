@@ -26,6 +26,17 @@ export interface GearItem {
   have: boolean;
   quantity?: string;
   notes?: string;
+  /** Which packed backpack this item belongs to, if any. A conceptually shared item (e.g.
+   * "Agua" needed in two bags) is two separate GearItem rows, each with its own bagId and its
+   * own have status — not one item referencing multiple bags — since each bag needs its own
+   * physical unit anyway. */
+  bagId?: string;
+}
+
+export interface Bag {
+  id: string;
+  name: string;
+  emoji?: string;
 }
 
 export type CourseStatus = 'pendiente' | 'en_curso' | 'hecho';

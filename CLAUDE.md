@@ -62,7 +62,12 @@ There is no test suite yet.
   instant and offline.
 - `src/screens/`
   - `ChecklistScreen.tsx` — gear/supplies checklist. Two levels: a `resumen` view (readiness percentage, segmented
-    `Meter`, and one `Bar` per category) drills into a single category's item list, or into all items.
+    `Meter`, and one `Bar` per row) drills into a single group's item list, or into all items. The resumen groups
+    either by `GearCategory` or by `Bag` (a "Por categoría" / "Por mochila" toggle) — a `GearItem.bagId` is which
+    packed backpack it's in, and a shared item needed in two bags is two separate `GearItem` rows (each with its
+    own bagId and have status), not one item referencing many bags, since each bag needs its own physical unit
+    anyway. Items with no bag, or an orphaned `bagId` left behind by a deleted bag, fall into a synthetic
+    "Sin mochila" group computed on the fly rather than stored.
   - `CoursesScreen.tsx` — courses tracker with status (`pendiente` / `en_curso` / `hecho`), cycled by tapping a row.
   - `MaterialScreen.tsx` — study notes/links, optionally linked to a course.
   - `QuizScreen.tsx` — question bank (CRUD) plus a "Simulacro" mode that runs a shuffled quiz over all or
