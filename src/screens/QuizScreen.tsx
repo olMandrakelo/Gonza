@@ -1,6 +1,7 @@
-import React, { useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import React, { useCallback, useMemo, useState } from 'react';
+import { BackHandler, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import { Button, Card, Chip, EmptyState, Field, Label, Screen, ScreenHeader } from '../ui/components';
 import { useTheme } from '../ui/ThemeContext';
 import { Colors, mono, radius, spacing } from '../ui/theme';
@@ -171,6 +172,22 @@ function Simulacro({ questions, courses }: { questions: Question[]; courses: Cou
   );
 
   const score = answers.filter(Boolean).length;
+
+  // Being mid-simulacro is local state, not a navigation-stack entry, so the hardware back
+  // button doesn't know about it by default and exits the app instead of leaving the quiz.
+  useFocusEffect(
+    useCallback(() => {
+      const onBack = () => {
+        if (running && !finished) {
+          setRunning(null);
+          return true;
+        }
+        return false;
+      };
+      const sub = BackHandler.addEventListener('hardwareBackPress', onBack);
+      return () => sub.remove();
+    }, [running, finished])
+  );
 
   function start() {
     setRunning(shuffle(pool));

@@ -1,6 +1,7 @@
-import React, { useMemo, useState } from 'react';
-import { FlatList, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import React, { useCallback, useMemo, useState } from 'react';
+import { BackHandler, FlatList, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import { Bar, Button, Card, Chip, EmptyState, Field, Label, Meter, Screen, ScreenHeader } from '../ui/components';
 import { ItemPickerModal } from '../ui/ItemPickerModal';
 import { useTheme } from '../ui/ThemeContext';
@@ -48,6 +49,29 @@ export default function ChecklistScreen() {
     setQuantity('');
     setShowForm(false);
   }
+
+  // The category drill-down and the add form are local state, not navigation-stack entries, so
+  // Android's hardware back button doesn't know about them by default and exits the app instead
+  // of stepping back one level. Intercept it here, in priority order; the item picker's own
+  // Modal already handles back on its own, so defer to it when it's open.
+  useFocusEffect(
+    useCallback(() => {
+      const onBack = () => {
+        if (pickerOpen) return false;
+        if (showForm) {
+          setShowForm(false);
+          return true;
+        }
+        if (view !== 'resumen') {
+          setView('resumen');
+          return true;
+        }
+        return false;
+      };
+      const sub = BackHandler.addEventListener('hardwareBackPress', onBack);
+      return () => sub.remove();
+    }, [pickerOpen, showForm, view])
+  );
 
   async function handleAdd() {
     if (!name.trim()) return;
