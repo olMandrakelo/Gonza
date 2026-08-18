@@ -60,6 +60,10 @@ There is no test suite yet.
   only renders when `iconsSupported()` is true. The alternates themselves are declared in the `app.json` plugin
   entry — adding or renaming one is a native change and needs a rebuild, but switching between the declared ones is
   instant and offline.
+- `src/knotsData.ts` — `KNOTS`, static reference content (name, use, numbered steps, a diagram `require()`d from
+  `src/assets/knots/`) for Material's "Guía de nudos" mode. Not user data, so it isn't read through `useStorageList`
+  like the rest of Material — it's a plain constant rendered read-only. The diagrams are plain PNGs (RN's own
+  `Image`, not SVG or a native renderer), so this ships as a normal OTA update like everything else in `src/`.
 - `src/screens/`
   - `ChecklistScreen.tsx` — gear/supplies checklist. Two levels: a `resumen` view (readiness percentage, segmented
     `Meter`, and one `Bar` per row) drills into a single group's item list, or into all items. The resumen groups
@@ -69,7 +73,9 @@ There is no test suite yet.
     anyway. Items with no bag, or an orphaned `bagId` left behind by a deleted bag, fall into a synthetic
     "Sin mochila" group computed on the fly rather than stored.
   - `CoursesScreen.tsx` — courses tracker with status (`pendiente` / `en_curso` / `hecho`), cycled by tapping a row.
-  - `MaterialScreen.tsx` — study notes/links, optionally linked to a course.
+  - `MaterialScreen.tsx` — two modes via Chip toggle: `Mis notas` (study notes/links, optionally linked to a
+    course — the original CRUD list) and `Guía de nudos`, a read-only, tap-to-expand list over the static `KNOTS`
+    from `src/knotsData.ts`.
   - `QuizScreen.tsx` — question bank (CRUD) plus a "Simulacro" mode that runs a shuffled quiz over all or
     course-filtered questions and scores it.
   - `FamilyScreen.tsx` — two modes: `Integrantes` (CRUD list of `FamilyMember`, one per person: contacts, blood
