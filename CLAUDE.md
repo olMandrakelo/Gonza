@@ -32,11 +32,16 @@ There is no test suite yet.
   custom backend/database — add new entity types by defining a type in `types.ts` and calling the hook with a new key.
   `useStorageObject<T>(key, empty)` is the same idea for a single record instead of a list (used for `FamilyPlan`,
   which has one fixed shape rather than add/remove entries).
-- `src/seedData.ts` — `seedGearIfNeeded()`, called once from `App.tsx` before the first screen mounts. Writes a
-  starter checklist (consolidated from the "Día Cero" 72h family-bag guide) directly to `gonza:gear` in AsyncStorage
-  only if that list is still empty, then sets a flag so it never runs again — it will not resurrect items a user
-  deleted. It writes directly rather than looping `addItem`, since looping would race `useStorageList`'s closured
-  `items` state and silently drop all but the last write.
+- `src/seedData.ts` — `SEED_BAGS` (the 4 backpacks from the "Día Cero" 72h guide: líder, apoyo, niñ@ 1, niñ@ 2) and
+  `SEED_ITEMS_BY_BAG` (one items array per bag, transcribed straight from the guide rather than consolidated, so the
+  suggested checklist loads split by mochila instead of as one flat list). `buildSeed()` assigns fresh ids to both
+  and wires each item's `bagId` to the bag generated alongside it in that same call — used both by
+  `seedGearIfNeeded()` (below) and by the "Cargar checklist sugerido" fallback button in `ChecklistScreen`'s empty
+  state. `seedGearIfNeeded()`, called once from `App.tsx` before the first screen mounts, writes a `buildSeed()`
+  result directly to `gonza:bags` and `gonza:gear` in AsyncStorage only if both lists are still empty, then sets a
+  flag so it never runs again — it will not resurrect bags or items a user deleted. It writes directly rather than
+  looping `addItem`/`addBag`, since looping would race `useStorageList`'s closured `items` state and silently drop
+  all but the last write.
 - `src/ui/theme.ts` — spacing/radius tokens, dark/light base palettes, and the accent presets (`ACCENT_PRESETS`:
   `senal` / `oliva` / `arena` / `acero`); `buildColors(scheme, accentKey)` combines them into the active `Colors`.
   Also exports `mono` (the platform monospace face used for titles, labels and figures), `progressColor(colors, ratio)`

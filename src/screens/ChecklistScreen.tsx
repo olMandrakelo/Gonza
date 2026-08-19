@@ -8,7 +8,7 @@ import { useTheme } from '../ui/ThemeContext';
 import { Colors, mono, progressColor, radius, spacing } from '../ui/theme';
 import { useStorageList } from '../storage';
 import { Bag, GEAR_CATEGORIES, GearCategory, GearItem } from '../types';
-import { SEED_ITEMS } from '../seedData';
+import { buildSeed } from '../seedData';
 import { CATALOG_ITEMS } from '../catalog';
 
 /** Sentinel bag id for items with no bag assigned, so they still show up in "por mochila". */
@@ -28,7 +28,7 @@ export default function ChecklistScreen() {
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const { items, loading, addItem, addMany, updateItem, removeItem } = useStorageList<GearItem>('gonza:gear');
-  const { items: bags, addItem: addBag, removeItem: removeBag } = useStorageList<Bag>('gonza:bags');
+  const { items: bags, addItem: addBag, addMany: addManyBags, removeItem: removeBag } = useStorageList<Bag>('gonza:bags');
 
   const [view, setView] = useState<ViewMode>({ kind: 'resumen' });
   const [groupMode, setGroupMode] = useState<GroupMode>('categoria');
@@ -153,6 +153,12 @@ export default function ChecklistScreen() {
     setShowBagForm(false);
   }
 
+  async function handleLoadSeed() {
+    const { bags: seedBags, items: seedItems } = buildSeed();
+    await addManyBags(seedBags);
+    await addMany(seedItems);
+  }
+
   const bagTitle = (id: string) => (id === UNASSIGNED ? 'Sin mochila' : bags.find((b) => b.id === id)?.name ?? 'Mochila');
 
   const title =
@@ -244,7 +250,7 @@ export default function ChecklistScreen() {
                 <Button
                   title="Cargar checklist sugerido (Día Cero)"
                   variant="secondary"
-                  onPress={() => addMany(SEED_ITEMS.map((item) => ({ ...item, have: false })))}
+                  onPress={handleLoadSeed}
                 />
               </View>
             ) : groupMode === 'categoria' ? (

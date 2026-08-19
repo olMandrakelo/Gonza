@@ -46,8 +46,8 @@ export function useStorageList<T extends { id: string }>(storageKey: string) {
   );
 
   const addMany = useCallback(
-    (newItems: Omit<T, 'id'>[]) => {
-      const withIds = newItems.map((item) => ({ ...item, id: generateId() }) as T);
+    (newItems: (Omit<T, 'id'> & { id?: string })[]) => {
+      const withIds = newItems.map((item) => ({ ...item, id: item.id ?? generateId() }) as T);
       return persist([...withIds, ...items]);
     },
     [items, persist]
