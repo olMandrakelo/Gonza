@@ -1,0 +1,78 @@
+{
+  "expo": {
+    "name": "Preparacionista",
+    "slug": "preparacionista",
+    "owner": "mandrake0583",
+    "version": "1.2.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "package": "com.olmandrakelo.preparacionista",
+      "versionCode": 3,
+      "adaptiveIcon": {
+        "backgroundColor": "#1B2016",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "c490db86-e5d2-4e6f-919f-00c94b257925"
+      }
+    },
+    "updates": {
+      "url": "https://u.expo.dev/c490db86-e5d2-4e6f-919f-00c94b257925"
+    },
+    "plugins": [
+      [
+        "expo-alternate-app-icons",
+        [
+          {
+            "name": "Casilla",
+            "ios": "./assets/icon-casilla.png",
+            "android": {
+              "foregroundImage": "./assets/icon-casilla-fg.png",
+              "backgroundColor": "#1B2016"
+            }
+          },
+          {
+            "name": "Medidor",
+            "ios": "./assets/icon-medidor.png",
+            "android": {
+              "foregroundImage": "./assets/icon-medidor-fg.png",
+              "backgroundColor": "#1B2016"
+            }
+          },
+          {
+            "name": "Mochila",
+            "ios": "./assets/icon-mochila.png",
+            "android": {
+              "foregroundImage": "./assets/icon-mochila-fg.png",
+              "backgroundColor": "#1B2016"
+            }
+          },
+          {
+            "name": "Brujula",
+            "ios": "./assets/icon-brujula.png",
+            "android": {
+              "foregroundImage": "./assets/icon-brujula-fg.png",
+              "backgroundColor": "#1B2016"
+            }
+          }
+        ]
+      ]
+    ]
+  }
+}
