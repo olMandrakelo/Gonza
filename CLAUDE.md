@@ -76,7 +76,10 @@ There is no test suite yet.
     packed backpack it's in, and a shared item needed in two bags is two separate `GearItem` rows (each with its
     own bagId and have status), not one item referencing many bags, since each bag needs its own physical unit
     anyway. Items with no bag, or an orphaned `bagId` left behind by a deleted bag, fall into a synthetic
-    "Sin mochila" group computed on the fly rather than stored.
+    "Sin mochila" group computed on the fly rather than stored. Tapping a bag in "Mochilas creadas" opens the same
+    create form pre-filled, in edit mode (`updateItem` instead of `addItem`) — same pattern as `FamilyScreen`'s
+    member rows. The emoji field offers `BAG_EMOJI_PRESETS` (a tap-to-pick row) plus free text for anything not
+    covered — plain unicode characters, so no icon font/SVG dependency.
   - `CoursesScreen.tsx` — courses tracker with status (`pendiente` / `en_curso` / `hecho`), cycled by tapping a row.
   - `MaterialScreen.tsx` — two modes via Chip toggle: `Mis notas` (study notes/links, optionally linked to a
     course — the original CRUD list) and `Guía de nudos`, a read-only, tap-to-expand list over the static `KNOTS`

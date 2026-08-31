@@ -14,6 +14,11 @@ import { CATALOG_ITEMS } from '../catalog';
 /** Sentinel bag id for items with no bag assigned, so they still show up in "por mochila". */
 const UNASSIGNED = '__sin_mochila__';
 
+/** Tap-to-pick presets offered alongside the free-text emoji field when naming a mochila. */
+const BAG_EMOJI_PRESETS = [
+  '🎒', '🧳', '🩹', '⛑️', '💧', '🔥', '🛠️', '📡', '🔦', '🍫', '📄', '🐾', '🏠', '🚗', '🧒', '🧭',
+];
+
 type GroupMode = 'categoria' | 'mochila';
 
 /** 'resumen' shows readiness + grouped bars; 'todos' and the category/bag variants are
@@ -28,7 +33,13 @@ export default function ChecklistScreen() {
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const { items, loading, addItem, addMany, updateItem, removeItem } = useStorageList<GearItem>('gonza:gear');
-  const { items: bags, addItem: addBag, addMany: addManyBags, removeItem: removeBag } = useStorageList<Bag>('gonza:bags');
+  const {
+    items: bags,
+    addItem: addBag,
+    addMany: addManyBags,
+    updateItem: updateBag,
+    removeItem: removeBag,
+  } = useStorageList<Bag>('gonza:bags');
 
   const [view, setView] = useState<ViewMode>({ kind: 'resumen' });
   const [groupMode, setGroupMode] = useState<GroupMode>('categoria');
@@ -40,6 +51,7 @@ export default function ChecklistScreen() {
   const [bagId, setBagId] = useState<string | undefined>(undefined);
 
   const [showBagForm, setShowBagForm] = useState(false);
+  const [editingBagId, setEditingBagId] = useState<string | null>(null);
   const [bagName, setBagName] = useState('');
   const [bagEmoji, setBagEmoji] = useState('');
 
@@ -145,12 +157,29 @@ export default function ChecklistScreen() {
     resetForm();
   }
 
-  async function handleAddBag() {
-    if (!bagName.trim()) return;
-    await addBag({ name: bagName.trim(), emoji: bagEmoji.trim() || undefined });
+  function resetBagForm() {
     setBagName('');
     setBagEmoji('');
+    setEditingBagId(null);
     setShowBagForm(false);
+  }
+
+  function startEditBag(b: Bag) {
+    setEditingBagId(b.id);
+    setBagName(b.name);
+    setBagEmoji(b.emoji ?? '');
+    setShowBagForm(true);
+  }
+
+  async function handleSaveBag() {
+    if (!bagName.trim()) return;
+    const patch = { name: bagName.trim(), emoji: bagEmoji.trim() || undefined };
+    if (editingBagId) {
+      await updateBag(editingBagId, patch);
+    } else {
+      await addBag(patch);
+    }
+    resetBagForm();
   }
 
   async function handleLoadSeed() {
@@ -293,8 +322,23 @@ export default function ChecklistScreen() {
                 {showBagForm ? (
                   <Card>
                     <Field label="Nombre de la mochila" value={bagName} onChangeText={setBagName} placeholder="Ej: Mochila líder" />
-                    <Field label="Emoji (opcional)" value={bagEmoji} onChangeText={setBagEmoji} placeholder="🎒" />
-                    <Button title="Crear mochila" onPress={handleAddBag} />
+                    <Label>Ícono (opcional)</Label>
+                    <View style={styles.emojiRow}>
+                      {BAG_EMOJI_PRESETS.map((e) => (
+                        <Pressable
+                          key={e}
+                          onPress={() => setBagEmoji(e)}
+                          style={[styles.emojiOption, bagEmoji === e && styles.emojiOptionSelected]}
+                        >
+                          <Text style={styles.emojiOptionText}>{e}</Text>
+                        </Pressable>
+                      ))}
+                    </View>
+                    <Field label="U otro emoji" value={bagEmoji} onChangeText={setBagEmoji} placeholder="🎒" />
+                    <View style={styles.bagFormActions}>
+                      <Button title="Cancelar" variant="secondary" onPress={resetBagForm} />
+                      <Button title={editingBagId ? 'Guardar cambios' : 'Crear mochila'} onPress={handleSaveBag} />
+                    </View>
                   </Card>
                 ) : (
                   <Button title="+ Mochila" variant="secondary" onPress={() => setShowBagForm(true)} />
@@ -304,12 +348,12 @@ export default function ChecklistScreen() {
                   <View style={styles.bagManage}>
                     <Label>Mochilas creadas</Label>
                     {bags.map((b) => (
-                      <View key={b.id} style={styles.bagManageRow}>
+                      <Pressable key={b.id} style={styles.bagManageRow} onPress={() => startEditBag(b)}>
                         <Text style={styles.bagManageName}>{b.emoji ? `${b.emoji} ${b.name}` : b.name}</Text>
                         <Pressable hitSlop={12} onPress={() => removeBag(b.id)}>
                           <Text style={styles.remove}>✕</Text>
                         </Pressable>
-                      </View>
+                      </Pressable>
                     ))}
                   </View>
                 )}
@@ -389,6 +433,21 @@ function makeStyles(colors: Colors) {
     catFrac: { fontFamily: mono, fontSize: 11, color: colors.textMuted },
     allRow: { paddingTop: spacing.sm },
     allText: { fontFamily: mono, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', color: colors.accent },
+
+    emojiRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginBottom: spacing.sm },
+    emojiOption: {
+      width: 40,
+      height: 40,
+      borderRadius: radius.sm,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.surfaceAlt,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    emojiOptionSelected: { borderColor: colors.accent, backgroundColor: colors.accentMuted },
+    emojiOptionText: { fontSize: 18 },
+    bagFormActions: { flexDirection: 'row', gap: spacing.sm },
 
     bagManage: { marginTop: spacing.sm, gap: spacing.sm },
     bagManageRow: {
