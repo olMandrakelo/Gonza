@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <title>PromptCraft</title>
+    <style>
+      body {
+        width: 360px;
+        max-height: 500px;
+        overflow-y: auto;
+        margin: 0;
+        padding: 12px;
+        font-family: system-ui, sans-serif;
+        font-size: 13px;
+        color: #1a1a1a;
+      }
+      h1 {
+        font-size: 14px;
+        margin: 0 0 10px;
+      }
+      .warning {
+        background: #fff4e5;
+        border: 1px solid #f0c36d;
+        padding: 8px;
+        border-radius: 6px;
+        margin-bottom: 10px;
+      }
+      .warning a {
+        color: #7c3aed;
+      }
+      .entry {
+        border: 1px solid #e2e2e2;
+        border-radius: 8px;
+        padding: 8px;
+        margin-bottom: 8px;
+        display: flex;
+        gap: 8px;
+      }
+      .entry img {
+        width: 48px;
+        height: 48px;
+        object-fit: cover;
+        border-radius: 6px;
+        flex-shrink: 0;
+      }
+      .entry-body {
+        flex: 1;
+        min-width: 0;
+      }
+      .entry-prompt {
+        white-space: pre-wrap;
+        word-break: break-word;
+        max-height: 80px;
+        overflow-y: auto;
+        margin: 4px 0;
+      }
+      button {
+        font-size: 12px;
+        padding: 3px 8px;
+        border-radius: 5px;
+        border: 1px solid #ccc;
+        background: #fff;
+        cursor: pointer;
+      }
+      button:hover {
+        background: #f2f2f2;
+      }
+      .empty {
+        color: #777;
+        text-align: center;
+        padding: 20px 0;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>PromptCraft</h1>
+    <div id="warning" class="warning" hidden>
+      Falta tu API key. <a id="open-options" href="#">Configurala acá</a>.
+    </div>
+    <div id="list"></div>
+    <script src="popup.js"></script>
+  </body>
+</html>
