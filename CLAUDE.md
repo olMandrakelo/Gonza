@@ -43,7 +43,7 @@ There is no test suite yet.
   looping `addItem`/`addBag`, since looping would race `useStorageList`'s closured `items` state and silently drop
   all but the last write.
 - `src/ui/theme.ts` — spacing/radius tokens, dark/light base palettes, and the accent presets (`ACCENT_PRESETS`:
-  `senal` / `oliva` / `arena` / `acero`); `buildColors(scheme, accentKey)` combines them into the active `Colors`.
+  `senal` / `oliva` / `arena` / `acero` / `menta` / `dorado`) and the three `STYLE_PRESETS`; `buildColors(scheme, accentKey)` combines them into the active `Colors`.
   Also exports `mono` (the platform monospace face used for titles, labels and figures), `progressColor(colors, ratio)`
   for the shared short/halfway/on-track colour rule, and `normalizeAccentKey` which maps the pre-redesign accent keys
   onto the current ones so a stored preference survives the rename.
@@ -137,11 +137,19 @@ switcher moved the app to 1.2.0. That means:
 
 ## Visual direction
 
-The app is styled as a **field inventory sheet**, not a generic dark app: neutrals biased toward olive rather than
-pure grey, monospace for titles/labels/figures with the system sans for running text, squared-off radii, and signal
-orange as the default accent. Colour carries one meaning each — the accent marks interactive and "short on this",
-`colors.ok` (olive) marks done, `colors.warning` (sand) marks halfway. Screens open with a data block (readiness,
-progress, score strip) rather than an empty list, so nothing reads as a blank page.
+The look is a selectable **style** (Ajustes → Estilo), independent of light/dark mode and accent: `limpio` (cool
+off-white, white shadowed cards, large radii, sans titles, teal), `tactico` (near-black/amber, small radii,
+condensed uppercase titles, flat bordered cards) and `oliva` (the original olive/sand "field sheet", serif titles,
+monospace labels — the default for existing installs). A style supplies the base palette per scheme, corner radii,
+typefaces, title transform and whether cards use shadow or a hairline border (`STYLE_PRESETS` in `src/ui/theme.ts`).
+Switching style also resets the accent to that style's default (`defaultAccent`); the accent picker still overrides.
+Fonts are system families only (`sans-serif`, `sans-serif-condensed`, `serif`, `monospace`) — web fonts would need a
+native font module and break OTA. Colour still carries one meaning each: accent marks interactive and "short on
+this", `colors.ok` marks done, `colors.warning` marks halfway.
+
+Style tokens ride on the `colors` object every screen already gets (`colors.radius`, `colors.fonts.{title,label}`,
+`colors.titleTransform`, `colors.elevated`), so `makeStyles(colors)` re-themes live. Never import a static radius or
+font into a screen — read them from `colors`.
 
 ## Conventions
 

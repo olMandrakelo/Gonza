@@ -3,7 +3,7 @@ import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Card, Label, Screen, ScreenHeader } from '../ui/components';
 import { useTheme } from '../ui/ThemeContext';
-import { ACCENT_PRESETS, AccentKey, Colors, ThemeMode, mono, radius, spacing } from '../ui/theme';
+import { ACCENT_PRESETS, AccentKey, Colors, STYLE_PRESETS, StyleKey, ThemeMode, spacing } from '../ui/theme';
 import { APP_ICONS, applyIcon, currentIconKey, iconsSupported } from '../ui/appIcon';
 
 const MODE_OPTIONS: { value: ThemeMode; label: string }[] = [
@@ -13,7 +13,7 @@ const MODE_OPTIONS: { value: ThemeMode; label: string }[] = [
 ];
 
 export default function SettingsScreen() {
-  const { colors, scheme, mode, setMode, accentKey, setAccentKey } = useTheme();
+  const { colors, scheme, mode, setMode, accentKey, setAccentKey, styleKey, setStyleKey } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const canSwitchIcon = iconsSupported();
   const [iconKey, setIconKey] = useState<string | null>(() => currentIconKey());
@@ -32,6 +32,46 @@ export default function SettingsScreen() {
         <ScreenHeader code="Sección 05 · Preferencias" title="Ajustes" />
 
         <ScrollView contentContainerStyle={styles.body}>
+          <Card>
+            <Label>Estilo</Label>
+            <View style={styles.styleRow}>
+              {(Object.keys(STYLE_PRESETS) as StyleKey[]).map((key) => {
+                const preset = STYLE_PRESETS[key];
+                const p = preset[scheme];
+                const on = styleKey === key;
+                return (
+                  <Pressable
+                    key={key}
+                    onPress={() => setStyleKey(key)}
+                    style={[styles.styleTile, on && { borderColor: colors.accent, borderWidth: 2 }]}
+                  >
+                    <View style={[styles.stylePreview, { backgroundColor: p.background, borderRadius: preset.radius.md }]}>
+                      <View
+                        style={{
+                          backgroundColor: p.surface,
+                          borderColor: p.border,
+                          borderWidth: preset.elevated ? 0 : 1,
+                          borderRadius: preset.radius.sm,
+                          height: 18,
+                        }}
+                      />
+                      <View
+                        style={{
+                          backgroundColor: ACCENT_PRESETS[preset.defaultAccent][scheme].accent,
+                          borderRadius: preset.radius.sm,
+                          height: 6,
+                          width: '60%',
+                        }}
+                      />
+                    </View>
+                    <Text style={[styles.styleName, on && { color: colors.accent }]}>{preset.label}</Text>
+                    <Text style={styles.styleDesc}>{preset.description}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </Card>
+
           <Card>
             <Label>Tema</Label>
             <View style={styles.seg}>
@@ -114,15 +154,28 @@ function makeStyles(colors: Colors) {
       flex: 1,
       alignItems: 'center',
       paddingVertical: spacing.sm + 2,
-      borderRadius: radius.sm,
+      borderRadius: colors.radius.sm,
       borderWidth: 1,
       borderColor: colors.border,
       backgroundColor: colors.surfaceAlt,
     },
     segItemOn: { borderColor: colors.accent, backgroundColor: colors.accentMuted },
-    segText: { fontFamily: mono, fontSize: 12, fontWeight: '700', color: colors.textMuted, letterSpacing: 0.6, textTransform: 'uppercase' },
+    segText: { fontFamily: colors.fonts.label, fontSize: 12, fontWeight: '700', color: colors.textMuted, letterSpacing: 0.6, textTransform: 'uppercase' },
     segTextOn: { color: colors.accent },
-    swatches: { flexDirection: 'row', gap: spacing.xl },
+    styleRow: { flexDirection: 'row', gap: spacing.sm },
+    styleTile: {
+      flex: 1,
+      padding: spacing.sm,
+      borderRadius: colors.radius.md,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.surfaceAlt,
+      gap: 4,
+    },
+    stylePreview: { padding: 6, gap: 6, height: 46, justifyContent: 'center' },
+    styleName: { color: colors.text, fontSize: 13, fontWeight: '700', marginTop: 2 },
+    styleDesc: { color: colors.textMuted, fontSize: 10, lineHeight: 13 },
+    swatches: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.lg },
     sw: { alignItems: 'center', gap: spacing.sm },
     swDot: {
       width: 34,
@@ -131,7 +184,7 @@ function makeStyles(colors: Colors) {
       borderWidth: 2,
       borderColor: 'transparent',
     },
-    swLabel: { fontFamily: mono, fontSize: 10, letterSpacing: 0.8, textTransform: 'uppercase', color: colors.textMuted },
+    swLabel: { fontFamily: colors.fonts.label, fontSize: 10, letterSpacing: 0.8, textTransform: 'uppercase', color: colors.textMuted },
     icons: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md },
     iconOpt: { alignItems: 'center', gap: spacing.sm, width: 62 },
     iconImg: {
@@ -141,7 +194,7 @@ function makeStyles(colors: Colors) {
       borderWidth: 1,
       borderColor: colors.border,
     },
-    iconLabel: { fontFamily: mono, fontSize: 9, letterSpacing: 0.6, textTransform: 'uppercase', color: colors.textMuted },
+    iconLabel: { fontFamily: colors.fonts.label, fontSize: 9, letterSpacing: 0.6, textTransform: 'uppercase', color: colors.textMuted },
     iconNote: { color: colors.textMuted, fontSize: 12, lineHeight: 17, marginTop: spacing.md },
     footer: {
       color: colors.textMuted,

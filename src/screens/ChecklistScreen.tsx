@@ -5,7 +5,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { Bar, Button, Card, Chip, EmptyState, Field, Label, Meter, Screen, ScreenHeader, confirmClear } from '../ui/components';
 import { ItemPickerModal } from '../ui/ItemPickerModal';
 import { useTheme } from '../ui/ThemeContext';
-import { Colors, mono, progressColor, radius, spacing } from '../ui/theme';
+import { Colors, progressColor, spacing } from '../ui/theme';
 import { useStorageList } from '../storage';
 import { Bag, GEAR_CATEGORIES, GearCategory, GearItem } from '../types';
 import { buildSeed } from '../seedData';
@@ -409,7 +409,7 @@ function makeStyles(colors: Colors) {
   return StyleSheet.create({
     safe: { flex: 1, backgroundColor: colors.background },
     back: { paddingHorizontal: spacing.lg, paddingBottom: spacing.sm },
-    backText: { fontFamily: mono, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', color: colors.accent },
+    backText: { fontFamily: colors.fonts.label, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', color: colors.accent },
     formWrap: { paddingHorizontal: spacing.lg },
     pickerGap: { height: spacing.md },
     chipsRow: { marginBottom: spacing.sm },
@@ -419,15 +419,15 @@ function makeStyles(colors: Colors) {
       backgroundColor: colors.surface,
       borderWidth: 1,
       borderColor: colors.border,
-      borderRadius: radius.md,
+      borderRadius: colors.radius.md,
       padding: spacing.md,
       marginBottom: spacing.md,
     },
     readyTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: spacing.sm },
-    readyNum: { fontFamily: mono, fontSize: 38, fontWeight: '700', color: colors.text, lineHeight: 40 },
+    readyNum: { fontFamily: colors.fonts.label, fontSize: 38, fontWeight: '700', color: colors.text, lineHeight: 40 },
     readyPct: { fontSize: 17, color: colors.textMuted },
     readySide: { alignItems: 'flex-end' },
-    readySideText: { fontFamily: mono, fontSize: 11, color: colors.textMuted, lineHeight: 17 },
+    readySideText: { fontFamily: colors.fonts.label, fontSize: 11, color: colors.textMuted, lineHeight: 17 },
     readySideStrong: { color: colors.text, fontWeight: '700' },
 
     groupRow: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.md },
@@ -437,15 +437,15 @@ function makeStyles(colors: Colors) {
     catRow: { gap: spacing.xs },
     catTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' },
     catName: { color: colors.text, fontSize: 14, fontWeight: '600' },
-    catFrac: { fontFamily: mono, fontSize: 11, color: colors.textMuted },
+    catFrac: { fontFamily: colors.fonts.label, fontSize: 11, color: colors.textMuted },
     allRow: { paddingTop: spacing.sm },
-    allText: { fontFamily: mono, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', color: colors.accent },
+    allText: { fontFamily: colors.fonts.label, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', color: colors.accent },
 
     emojiRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginBottom: spacing.sm },
     emojiOption: {
       width: 40,
       height: 40,
-      borderRadius: radius.sm,
+      borderRadius: colors.radius.sm,
       borderWidth: 1,
       borderColor: colors.border,
       backgroundColor: colors.surfaceAlt,
@@ -491,7 +491,7 @@ function makeStyles(colors: Colors) {
     itemBody: { flex: 1 },
     itemName: { color: colors.text, fontSize: 15 },
     itemNameDone: { color: colors.textMuted },
-    itemCat: { fontFamily: mono, fontSize: 10, letterSpacing: 0.8, textTransform: 'uppercase', color: colors.textMuted, marginTop: 2 },
+    itemCat: { fontFamily: colors.fonts.label, fontSize: 10, letterSpacing: 0.8, textTransform: 'uppercase', color: colors.textMuted, marginTop: 2 },
     itemQuantity: { fontSize: 12, lineHeight: 16, color: colors.textMuted, marginTop: 3 },
     remove: { color: colors.textMuted, fontSize: 15, paddingHorizontal: spacing.xs },
   });

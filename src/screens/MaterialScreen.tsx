@@ -3,7 +3,7 @@ import { FlatList, Image, Pressable, ScrollView, StyleSheet, Text, View } from '
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button, Card, Chip, EmptyState, Field, Label, Screen, ScreenHeader, confirmClear } from '../ui/components';
 import { useTheme } from '../ui/ThemeContext';
-import { Colors, mono, spacing } from '../ui/theme';
+import { Colors, spacing } from '../ui/theme';
 import { useStorageList } from '../storage';
 import { Course, Material } from '../types';
 import { KNOTS } from '../knotsData';
@@ -235,7 +235,7 @@ function makeStyles(colors: Colors) {
     },
     knotHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
     knotName: { color: colors.text, fontSize: 15, fontWeight: '600' },
-    knotToggle: { color: colors.accent, fontSize: 18, fontFamily: mono, fontWeight: '700' },
+    knotToggle: { color: colors.accent, fontSize: 18, fontFamily: colors.fonts.label, fontWeight: '700' },
     knotBody: { marginTop: spacing.md },
     knotImage: { width: '100%', height: 160, marginBottom: spacing.md },
     knotUse: { color: colors.text, fontSize: 13, lineHeight: 18, opacity: 0.85, marginBottom: spacing.sm },
@@ -244,7 +244,7 @@ function makeStyles(colors: Colors) {
     hazardIcon: { fontSize: 22 },
     hazardTag: { fontSize: 12, color: colors.textMuted, marginTop: 2 },
     hazardSection: {
-      fontFamily: mono,
+      fontFamily: colors.fonts.label,
       fontSize: 11,
       letterSpacing: 0.8,
       textTransform: 'uppercase',
@@ -263,7 +263,7 @@ function makeStyles(colors: Colors) {
     rowBody: { flex: 1 },
     rowTitle: { color: colors.text, fontSize: 15, fontWeight: '600' },
     rowContent: { color: colors.text, fontSize: 13, lineHeight: 18, marginTop: spacing.xs, opacity: 0.85 },
-    rowMeta: { fontFamily: mono, fontSize: 10, letterSpacing: 0.8, textTransform: 'uppercase', color: colors.textMuted, marginTop: spacing.xs },
+    rowMeta: { fontFamily: colors.fonts.label, fontSize: 10, letterSpacing: 0.8, textTransform: 'uppercase', color: colors.textMuted, marginTop: spacing.xs },
     remove: { color: colors.textMuted, fontSize: 15, paddingHorizontal: spacing.xs },
   });
 }

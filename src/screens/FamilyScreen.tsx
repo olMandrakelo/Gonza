@@ -3,7 +3,7 @@ import { Linking, ScrollView, StyleSheet, Text, View, Pressable } from 'react-na
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button, Card, Chip, EmptyState, Field, Screen, ScreenHeader, confirmClear } from '../ui/components';
 import { useTheme } from '../ui/ThemeContext';
-import { Colors, mono, spacing } from '../ui/theme';
+import { Colors, spacing } from '../ui/theme';
 import { useStorageList, useStorageObject } from '../storage';
 import { EvacuationRoute, FamilyMember, FamilyPlan, emptyFamilyPlan } from '../types';
 import { EMERGENCY_NUMBERS } from '../emergencyNumbers';
@@ -323,7 +323,7 @@ function makeStyles(colors: Colors) {
     memberBody: { flex: 1 },
     memberName: { color: colors.text, fontSize: 15, fontWeight: '600' },
     memberMeta: {
-      fontFamily: mono,
+      fontFamily: colors.fonts.label,
       fontSize: 10,
       letterSpacing: 0.8,
       textTransform: 'uppercase',
@@ -343,7 +343,7 @@ function makeStyles(colors: Colors) {
       borderBottomColor: colors.border,
     },
     emergencyLabel: { color: colors.text, fontSize: 14 },
-    emergencyNumber: { fontFamily: mono, fontSize: 14, fontWeight: '700', color: colors.accent },
+    emergencyNumber: { fontFamily: colors.fonts.label, fontSize: 14, fontWeight: '700', color: colors.accent },
 
     waRow: {
       flexDirection: 'row',
@@ -354,12 +354,12 @@ function makeStyles(colors: Colors) {
       borderBottomColor: colors.border,
     },
     waName: { color: colors.text, fontSize: 14 },
-    waAction: { fontFamily: mono, fontSize: 12, color: colors.ok, textTransform: 'uppercase', letterSpacing: 0.6 },
+    waAction: { fontFamily: colors.fonts.label, fontSize: 12, color: colors.ok, textTransform: 'uppercase', letterSpacing: 0.6 },
     waNote: { fontSize: 11, color: colors.textMuted, marginTop: spacing.sm, lineHeight: 15 },
     mapsLinkRow: { marginBottom: spacing.md },
 
     routeLabel: {
-      fontFamily: mono,
+      fontFamily: colors.fonts.label,
       fontSize: 13,
       fontWeight: '700',
       color: colors.accent,

@@ -8,18 +8,13 @@ export const spacing = {
   xl: 24,
 };
 
-export const radius = {
-  sm: 6,
-  md: 10,
-  lg: 14,
-};
-
 /** Monospace face — carries the field-inventory feel and aligns digits in columns. */
 export const mono = Platform.select({ ios: 'Menlo', android: 'monospace', default: 'monospace' });
 
 export type ThemeMode = 'dark' | 'light' | 'system';
 export type Scheme = 'dark' | 'light';
-export type AccentKey = 'senal' | 'oliva' | 'arena' | 'acero';
+export type AccentKey = 'senal' | 'oliva' | 'arena' | 'acero' | 'menta' | 'dorado';
+export type StyleKey = 'limpio' | 'tactico' | 'oliva';
 
 export const ACCENT_PRESETS: Record<
   AccentKey,
@@ -49,6 +44,16 @@ export const ACCENT_PRESETS: Record<
     dark: { accent: '#5B8299', accentMuted: '#1F3039' },
     light: { accent: '#3D6478', accentMuted: '#D8E4EA' },
   },
+  menta: {
+    label: 'Menta',
+    dark: { accent: '#2DB5A3', accentMuted: '#16322F' },
+    light: { accent: '#0F766E', accentMuted: '#D9EEEA' },
+  },
+  dorado: {
+    label: 'Dorado',
+    dark: { accent: '#F59E0B', accentMuted: '#3A2C0E' },
+    light: { accent: '#B45309', accentMuted: '#F6E7CE' },
+  },
 };
 
 /** Accent keys used before the "campo" redesign, mapped to their closest match. */
@@ -65,35 +70,154 @@ export function normalizeAccentKey(stored: string | null): AccentKey | null {
   return LEGACY_ACCENTS[stored] ?? null;
 }
 
-/** Neutrals are biased toward olive rather than pure grey — canvas and equipment, not generic dark UI. */
-const darkBase = {
-  background: '#14170F',
-  surface: '#1E2318',
-  surfaceAlt: '#272D20',
-  border: '#3A4230',
-  text: '#E6E9DC',
-  textMuted: '#9BA48C',
-  danger: '#C4553F',
-  warning: '#C9A227',
-  ok: '#7A9E5B',
+type BasePalette = {
+  background: string;
+  surface: string;
+  surfaceAlt: string;
+  border: string;
+  text: string;
+  textMuted: string;
+  danger: string;
+  warning: string;
+  ok: string;
 };
 
-const lightBase = {
-  background: '#E9E5D8',
-  surface: '#F5F2E8',
-  surfaceAlt: '#DFDACA',
-  border: '#C6BFAC',
-  text: '#1F2318',
-  textMuted: '#6B7259',
-  danger: '#A8412C',
-  warning: '#8A6A15',
-  ok: '#5C7B3E',
+const sans = Platform.select({ ios: 'System', android: 'sans-serif', default: 'System' });
+const sansMedium = Platform.select({ ios: 'System', android: 'sans-serif-medium', default: 'System' });
+const condensed = Platform.select({ ios: 'AvenirNextCondensed-DemiBold', android: 'sans-serif-condensed', default: 'System' });
+const serif = Platform.select({ ios: 'Georgia', android: 'serif', default: 'serif' });
+
+export interface StylePreset {
+  label: string;
+  description: string;
+  defaultAccent: AccentKey;
+  radius: { sm: number; md: number; lg: number };
+  fonts: { title: string; label: string };
+  titleTransform: 'none' | 'uppercase';
+  /** Cards float on a soft shadow instead of a hairline border. */
+  elevated: boolean;
+  dark: BasePalette;
+  light: BasePalette;
+}
+
+/**
+ * A "style" is the app's whole look: palette (per light/dark), corner radii, typefaces and
+ * whether cards use shadow or border. System font families only — web fonts would need a native
+ * font module, which would break OTA updates.
+ */
+export const STYLE_PRESETS: Record<StyleKey, StylePreset> = {
+  limpio: {
+    label: 'Limpio',
+    description: 'Claro, tarjetas redondeadas',
+    defaultAccent: 'menta',
+    radius: { sm: 10, md: 16, lg: 22 },
+    fonts: { title: sansMedium as string, label: sans as string },
+    titleTransform: 'none',
+    elevated: true,
+    light: {
+      background: '#F3F5F4',
+      surface: '#FFFFFF',
+      surfaceAlt: '#E6ECEA',
+      border: '#E1E8E5',
+      text: '#14201D',
+      textMuted: '#5E6E69',
+      danger: '#C2412D',
+      warning: '#B7791F',
+      ok: '#0F766E',
+    },
+    dark: {
+      background: '#101514',
+      surface: '#1A2120',
+      surfaceAlt: '#232C2A',
+      border: '#2A3432',
+      text: '#E8EEEC',
+      textMuted: '#8FA19C',
+      danger: '#E0604B',
+      warning: '#E0A63A',
+      ok: '#2DB5A3',
+    },
+  },
+  tactico: {
+    label: 'Táctico',
+    description: 'Oscuro, alto contraste',
+    defaultAccent: 'dorado',
+    radius: { sm: 4, md: 8, lg: 12 },
+    fonts: { title: condensed as string, label: condensed as string },
+    titleTransform: 'uppercase',
+    elevated: false,
+    light: {
+      background: '#E7E5E0',
+      surface: '#F4F2EE',
+      surfaceAlt: '#D9D6CE',
+      border: '#BDB9AE',
+      text: '#16181A',
+      textMuted: '#60646A',
+      danger: '#B3321F',
+      warning: '#B45309',
+      ok: '#3F7D4E',
+    },
+    dark: {
+      background: '#0E0F10',
+      surface: '#17191B',
+      surfaceAlt: '#232629',
+      border: '#2A2D30',
+      text: '#ECECEA',
+      textMuted: '#9A9C9E',
+      danger: '#FF6B5B',
+      warning: '#F59E0B',
+      ok: '#6FBF7F',
+    },
+  },
+  oliva: {
+    label: 'Oliva',
+    description: 'Verde oliva, tipografía serif',
+    defaultAccent: 'senal',
+    radius: { sm: 6, md: 10, lg: 14 },
+    fonts: { title: serif as string, label: mono as string },
+    titleTransform: 'none',
+    elevated: false,
+    light: {
+      background: '#E9E5D8',
+      surface: '#F5F2E8',
+      surfaceAlt: '#DFDACA',
+      border: '#C6BFAC',
+      text: '#1F2318',
+      textMuted: '#6B7259',
+      danger: '#A8412C',
+      warning: '#8A6A15',
+      ok: '#5C7B3E',
+    },
+    dark: {
+      background: '#14170F',
+      surface: '#1E2318',
+      surfaceAlt: '#272D20',
+      border: '#3A4230',
+      text: '#E6E9DC',
+      textMuted: '#9BA48C',
+      danger: '#C4553F',
+      warning: '#C9A227',
+      ok: '#7A9E5B',
+    },
+  },
 };
 
-export function buildColors(scheme: Scheme, accentKey: AccentKey) {
-  const base = scheme === 'dark' ? darkBase : lightBase;
+export function normalizeStyleKey(stored: string | null): StyleKey | null {
+  return stored === 'limpio' || stored === 'tactico' || stored === 'oliva' ? stored : null;
+}
+
+export function buildColors(scheme: Scheme, accentKey: AccentKey, styleKey: StyleKey = 'oliva') {
+  const preset = STYLE_PRESETS[styleKey];
+  const base = preset[scheme];
   const accent = ACCENT_PRESETS[accentKey][scheme];
-  return { ...base, accent: accent.accent, accentMuted: accent.accentMuted };
+  return {
+    ...base,
+    accent: accent.accent,
+    accentMuted: accent.accentMuted,
+    radius: preset.radius,
+    fonts: preset.fonts,
+    titleTransform: preset.titleTransform,
+    elevated: preset.elevated,
+  };
 }
 
 export type Colors = ReturnType<typeof buildColors>;

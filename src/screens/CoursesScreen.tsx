@@ -3,7 +3,7 @@ import { FlatList, Pressable, ScrollView, StyleSheet, Text, View } from 'react-n
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Bar, Button, Card, Chip, EmptyState, Field, Screen, ScreenHeader, confirmClear } from '../ui/components';
 import { useTheme } from '../ui/ThemeContext';
-import { Colors, mono, radius, spacing } from '../ui/theme';
+import { Colors, spacing } from '../ui/theme';
 import { useStorageList } from '../storage';
 import { COURSE_STATUSES, Course, CourseStatus } from '../types';
 
@@ -138,16 +138,16 @@ function makeStyles(colors: Colors) {
     },
     rowBody: { flex: 1 },
     rowTitle: { color: colors.text, fontSize: 15, fontWeight: '600' },
-    rowMeta: { fontFamily: mono, fontSize: 10, letterSpacing: 0.8, textTransform: 'uppercase', color: colors.textMuted, marginTop: 3 },
+    rowMeta: { fontFamily: colors.fonts.label, fontSize: 10, letterSpacing: 0.8, textTransform: 'uppercase', color: colors.textMuted, marginTop: 3 },
     pill: {
       alignSelf: 'flex-start',
       borderWidth: 1,
-      borderRadius: radius.sm,
+      borderRadius: colors.radius.sm,
       paddingHorizontal: spacing.sm,
       paddingVertical: 2,
       marginTop: spacing.sm,
     },
-    pillText: { fontFamily: mono, fontSize: 10, letterSpacing: 0.8, textTransform: 'uppercase', fontWeight: '700' },
+    pillText: { fontFamily: colors.fonts.label, fontSize: 10, letterSpacing: 0.8, textTransform: 'uppercase', fontWeight: '700' },
     remove: { color: colors.textMuted, fontSize: 15, paddingHorizontal: spacing.xs },
   });
 }

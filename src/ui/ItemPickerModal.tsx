@@ -4,7 +4,7 @@ import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-cont
 import { CatalogItem } from '../catalog';
 import { GEAR_CATEGORIES } from '../types';
 import { useTheme } from './ThemeContext';
-import { Colors, mono, radius, spacing } from './theme';
+import { Colors, spacing } from './theme';
 
 /** Bottom-sheet item picker: search + tap-to-select, grouped by category. Built on RN's own
  * Modal/SectionList — no extra dependency, so this ships as a plain OTA update. */
@@ -105,8 +105,8 @@ function makeStyles(colors: Colors) {
     backdrop: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)' },
     sheet: {
       backgroundColor: colors.surface,
-      borderTopLeftRadius: radius.lg,
-      borderTopRightRadius: radius.lg,
+      borderTopLeftRadius: colors.radius.lg,
+      borderTopRightRadius: colors.radius.lg,
       borderWidth: 1,
       borderColor: colors.border,
       height: '82%',
@@ -119,11 +119,11 @@ function makeStyles(colors: Colors) {
       alignItems: 'center',
       marginBottom: spacing.md,
     },
-    title: { fontFamily: mono, fontSize: 16, fontWeight: '700', color: colors.text },
+    title: { fontFamily: colors.fonts.label, fontSize: 16, fontWeight: '700', color: colors.text },
     close: { color: colors.textMuted, fontSize: 18, paddingHorizontal: spacing.xs },
     search: {
       backgroundColor: colors.surfaceAlt,
-      borderRadius: radius.sm,
+      borderRadius: colors.radius.sm,
       borderWidth: 1,
       borderColor: colors.border,
       color: colors.text,
@@ -133,7 +133,7 @@ function makeStyles(colors: Colors) {
       marginBottom: spacing.sm,
     },
     sectionHeader: {
-      fontFamily: mono,
+      fontFamily: colors.fonts.label,
       fontSize: 10,
       letterSpacing: 1.2,
       textTransform: 'uppercase',

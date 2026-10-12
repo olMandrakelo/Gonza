@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { Button, Card, Chip, EmptyState, Field, Label, Screen, ScreenHeader, confirmClear } from '../ui/components';
 import { useTheme } from '../ui/ThemeContext';
-import { Colors, mono, radius, spacing } from '../ui/theme';
+import { Colors, spacing } from '../ui/theme';
 import { useStorageList } from '../storage';
 import { Course, Question } from '../types';
 
@@ -330,11 +330,11 @@ function makeStyles(colors: Colors) {
       borderColor: colors.border,
       borderLeftWidth: 3,
       borderLeftColor: colors.accent,
-      borderRadius: radius.sm,
+      borderRadius: colors.radius.sm,
       padding: spacing.md,
       marginBottom: spacing.md,
     },
-    promptNum: { fontFamily: mono, fontSize: 10, letterSpacing: 1.2, textTransform: 'uppercase', color: colors.accent },
+    promptNum: { fontFamily: colors.fonts.label, fontSize: 10, letterSpacing: 1.2, textTransform: 'uppercase', color: colors.accent },
     promptText: { color: colors.text, fontSize: 16, fontWeight: '600', lineHeight: 22, marginTop: spacing.xs },
 
     opts: { gap: spacing.sm },
@@ -345,13 +345,13 @@ function makeStyles(colors: Colors) {
       borderWidth: 1,
       borderColor: colors.border,
       backgroundColor: colors.surfaceAlt,
-      borderRadius: radius.sm,
+      borderRadius: colors.radius.sm,
       paddingVertical: spacing.md,
       paddingHorizontal: spacing.md,
     },
     optRight: { borderColor: colors.ok, backgroundColor: colors.accentMuted },
     optWrong: { borderColor: colors.danger },
-    optLetter: { fontFamily: mono, fontSize: 12, color: colors.textMuted, fontWeight: '700' },
+    optLetter: { fontFamily: colors.fonts.label, fontSize: 12, color: colors.textMuted, fontWeight: '700' },
     optLetterRight: { color: colors.ok },
     optText: { color: colors.text, fontSize: 14, flex: 1 },
 
@@ -361,18 +361,18 @@ function makeStyles(colors: Colors) {
       backgroundColor: colors.surface,
       borderWidth: 1,
       borderColor: colors.border,
-      borderRadius: radius.md,
+      borderRadius: colors.radius.md,
       padding: spacing.md,
       marginBottom: spacing.md,
     },
-    resultScore: { fontFamily: mono, fontSize: 34, fontWeight: '700', color: colors.text, lineHeight: 38 },
+    resultScore: { fontFamily: colors.fonts.label, fontSize: 34, fontWeight: '700', color: colors.text, lineHeight: 38 },
     resultOf: { fontSize: 17, color: colors.textMuted },
 
     optionRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.sm },
     radio: {
       width: 28,
       height: 28,
-      borderRadius: radius.sm,
+      borderRadius: colors.radius.sm,
       borderWidth: 1.5,
       borderColor: colors.border,
       backgroundColor: colors.surfaceAlt,
@@ -380,12 +380,12 @@ function makeStyles(colors: Colors) {
       justifyContent: 'center',
     },
     radioSelected: { borderColor: colors.accent, backgroundColor: colors.accentMuted },
-    radioText: { fontFamily: mono, fontSize: 12, fontWeight: '700', color: colors.textMuted },
+    radioText: { fontFamily: colors.fonts.label, fontSize: 12, fontWeight: '700', color: colors.textMuted },
     radioTextSelected: { color: colors.accent },
     optionInput: {
       flex: 1,
       backgroundColor: colors.surfaceAlt,
-      borderRadius: radius.sm,
+      borderRadius: colors.radius.sm,
       borderWidth: 1,
       borderColor: colors.border,
       color: colors.text,
@@ -404,7 +404,7 @@ function makeStyles(colors: Colors) {
     },
     bankBody: { flex: 1 },
     bankText: { color: colors.text, fontSize: 14, lineHeight: 19 },
-    bankMeta: { fontFamily: mono, fontSize: 10, letterSpacing: 0.8, textTransform: 'uppercase', color: colors.textMuted, marginTop: 3 },
+    bankMeta: { fontFamily: colors.fonts.label, fontSize: 10, letterSpacing: 0.8, textTransform: 'uppercase', color: colors.textMuted, marginTop: 3 },
     remove: { color: colors.textMuted, fontSize: 15, paddingHorizontal: spacing.xs },
   });
 }

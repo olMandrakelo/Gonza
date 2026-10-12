@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { Alert, Pressable, StyleSheet, Text, TextInput, TextInputProps, View } from 'react-native';
 import { useTheme } from './ThemeContext';
-import { Colors, mono, radius, spacing } from './theme';
+import { Colors, spacing } from './theme';
 
 export function Screen({ children }: { children: React.ReactNode }) {
   const { colors } = useTheme();
@@ -154,21 +154,23 @@ function makeStyles(colors: Colors) {
     },
     headerText: { flex: 1 },
     headerCode: {
-      fontFamily: mono,
+      fontFamily: colors.fonts.label,
       fontSize: 10,
       letterSpacing: 1.4,
       textTransform: 'uppercase',
       color: colors.accent,
     },
     headerTitle: {
-      fontFamily: mono,
-      fontSize: 25,
+      fontFamily: colors.fonts.title,
+      fontSize: 26,
       fontWeight: '700',
+      textTransform: colors.titleTransform,
+      letterSpacing: colors.titleTransform === 'uppercase' ? 0.8 : 0,
       color: colors.text,
       marginTop: 1,
     },
     label: {
-      fontFamily: mono,
+      fontFamily: colors.fonts.label,
       fontSize: 10,
       letterSpacing: 1.2,
       textTransform: 'uppercase',
@@ -177,18 +179,27 @@ function makeStyles(colors: Colors) {
     },
     card: {
       backgroundColor: colors.surface,
-      borderRadius: radius.md,
+      borderRadius: colors.radius.md,
       padding: spacing.md,
-      borderWidth: 1,
+      borderWidth: colors.elevated ? 0 : 1,
       borderColor: colors.border,
       marginBottom: spacing.md,
+      ...(colors.elevated
+        ? {
+            elevation: 2,
+            shadowColor: '#000',
+            shadowOpacity: 0.08,
+            shadowRadius: 6,
+            shadowOffset: { width: 0, height: 2 },
+          }
+        : null),
     },
     fieldWrap: {
       marginBottom: spacing.md,
     },
     input: {
       backgroundColor: colors.surfaceAlt,
-      borderRadius: radius.sm,
+      borderRadius: colors.radius.sm,
       borderWidth: 1,
       borderColor: colors.border,
       color: colors.text,
@@ -199,7 +210,7 @@ function makeStyles(colors: Colors) {
     chip: {
       paddingHorizontal: spacing.md,
       paddingVertical: spacing.xs + 2,
-      borderRadius: radius.sm,
+      borderRadius: colors.radius.sm,
       borderWidth: 1,
       borderColor: colors.border,
       backgroundColor: colors.surfaceAlt,
@@ -211,7 +222,7 @@ function makeStyles(colors: Colors) {
       borderColor: colors.accent,
     },
     chipText: {
-      fontFamily: mono,
+      fontFamily: colors.fonts.label,
       fontSize: 11,
       letterSpacing: 0.6,
       textTransform: 'uppercase',
@@ -223,7 +234,7 @@ function makeStyles(colors: Colors) {
     },
     button: {
       backgroundColor: colors.accent,
-      borderRadius: radius.sm,
+      borderRadius: colors.radius.sm,
       paddingVertical: spacing.sm + 2,
       paddingHorizontal: spacing.md,
       alignItems: 'center',
@@ -237,7 +248,7 @@ function makeStyles(colors: Colors) {
       backgroundColor: colors.danger,
     },
     buttonText: {
-      fontFamily: mono,
+      fontFamily: colors.fonts.label,
       color: colors.background,
       fontWeight: '700',
       fontSize: 13,

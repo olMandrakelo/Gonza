@@ -12,7 +12,6 @@ import SettingsScreen from './src/screens/SettingsScreen';
 import { seedGearIfNeeded } from './src/seedData';
 import { ThemeProvider, useTheme } from './src/ui/ThemeContext';
 import { TAB_ICONS } from './src/ui/icons';
-import { mono } from './src/ui/theme';
 
 const Tab = createBottomTabNavigator();
 
@@ -48,7 +47,7 @@ function Navigation() {
               paddingBottom: 8 + insets.bottom,
             },
             tabBarLabelStyle: {
-              fontFamily: mono,
+              fontFamily: colors.fonts.label,
               fontSize: 9,
               letterSpacing: 0.6,
               textTransform: 'uppercase',
