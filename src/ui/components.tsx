@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, TextInputProps, View } from 'react-native';
+import { Alert, Pressable, StyleSheet, Text, TextInput, TextInputProps, View } from 'react-native';
 import { useTheme } from './ThemeContext';
 import { Colors, mono, radius, spacing } from './theme';
 
@@ -258,4 +258,12 @@ function makeStyles(colors: Colors) {
       fontSize: 14,
     },
   });
+}
+
+/** Asks for confirmation before running a destructive "empty this list" action. */
+export function confirmClear(what: string, onConfirm: () => void) {
+  Alert.alert(`Vaciar ${what}`, 'Se borra todo y no se puede deshacer.', [
+    { text: 'Cancelar', style: 'cancel' },
+    { text: 'Vaciar', style: 'destructive', onPress: onConfirm },
+  ]);
 }

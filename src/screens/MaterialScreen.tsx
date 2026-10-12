@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { FlatList, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Button, Card, Chip, EmptyState, Field, Label, Screen, ScreenHeader } from '../ui/components';
+import { Button, Card, Chip, EmptyState, Field, Label, Screen, ScreenHeader, confirmClear } from '../ui/components';
 import { useTheme } from '../ui/ThemeContext';
 import { Colors, mono, spacing } from '../ui/theme';
 import { useStorageList } from '../storage';
@@ -14,7 +14,7 @@ type Mode = 'notas' | 'nudos' | 'riesgo';
 export default function MaterialScreen() {
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
-  const { items, loading, addItem, removeItem } = useStorageList<Material>('gonza:material');
+  const { items, loading, addItem, removeItem, clearAll } = useStorageList<Material>('gonza:material');
   const { items: courses } = useStorageList<Course>('gonza:courses');
   const [mode, setMode] = useState<Mode>('notas');
   const [showForm, setShowForm] = useState(false);
@@ -106,6 +106,13 @@ export default function MaterialScreen() {
               keyExtractor={(m) => m.id}
               contentContainerStyle={styles.list}
               ListEmptyComponent={<EmptyState text="Todavía no guardaste material. Tocá + Material para empezar." />}
+              ListFooterComponent={
+                items.length > 0 ? (
+                  <View style={{ marginTop: spacing.lg }}>
+                    <Button title="Vaciar notas" variant="danger" onPress={() => confirmClear('las notas', clearAll)} />
+                  </View>
+                ) : null
+              }
               renderItem={({ item }) => (
                 <View style={styles.row}>
                   <View style={styles.rowBody}>

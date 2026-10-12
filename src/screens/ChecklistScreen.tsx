@@ -2,7 +2,7 @@ import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { BackHandler, FlatList, Platform, Pressable, ScrollView, StyleSheet, Text, ToastAndroid, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
-import { Bar, Button, Card, Chip, EmptyState, Field, Label, Meter, Screen, ScreenHeader } from '../ui/components';
+import { Bar, Button, Card, Chip, EmptyState, Field, Label, Meter, Screen, ScreenHeader, confirmClear } from '../ui/components';
 import { ItemPickerModal } from '../ui/ItemPickerModal';
 import { useTheme } from '../ui/ThemeContext';
 import { Colors, mono, progressColor, radius, spacing } from '../ui/theme';
@@ -32,13 +32,14 @@ type ViewMode =
 export default function ChecklistScreen() {
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
-  const { items, loading, addItem, addMany, updateItem, removeItem } = useStorageList<GearItem>('gonza:gear');
+  const { items, loading, addItem, addMany, updateItem, removeItem, clearAll: clearItems } = useStorageList<GearItem>('gonza:gear');
   const {
     items: bags,
     addItem: addBag,
     addMany: addManyBags,
     updateItem: updateBag,
     removeItem: removeBag,
+    clearAll: clearBags,
   } = useStorageList<Bag>('gonza:bags');
 
   const [view, setView] = useState<ViewMode>({ kind: 'resumen' });
@@ -355,8 +356,14 @@ export default function ChecklistScreen() {
                         </Pressable>
                       </Pressable>
                     ))}
+                    <Button title="Vaciar mochilas" variant="danger" onPress={() => confirmClear('mochilas', clearBags)} />
                   </View>
                 )}
+              </View>
+            )}
+            {items.length > 0 && (
+              <View style={styles.clearWrap}>
+                <Button title="Vaciar equipo" variant="danger" onPress={() => confirmClear('el equipo (todos los ítems)', clearItems)} />
               </View>
             )}
           </ScrollView>
@@ -449,6 +456,7 @@ function makeStyles(colors: Colors) {
     emojiOptionText: { fontSize: 18 },
     bagFormActions: { flexDirection: 'row', gap: spacing.sm },
 
+    clearWrap: { marginTop: spacing.lg },
     bagManage: { marginTop: spacing.sm, gap: spacing.sm },
     bagManageRow: {
       flexDirection: 'row',

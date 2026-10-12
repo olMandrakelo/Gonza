@@ -108,6 +108,11 @@ There is no test suite yet.
     native maps SDK: same plain-`Linking`-URL approach as the `tel:`/`wa.me` links on this screen, so it stays OTA.
   - `SettingsScreen.tsx` — theme mode and accent color picker, backed by `useTheme()`.
 
+Every list screen (Equipo items and mochilas, Cursos, Material notas, Preguntas, Integrantes) ends with a danger-variant
+"Vaciar …" button that goes through `confirmClear()` (`src/ui/components.tsx`, an `Alert` confirm) and then the
+hook's `clearAll()` (`useStorageList`, a single `persist([])`). Clearing doesn't reset the seed flag, so the starter
+checklist won't silently reload — Equipo's empty state still offers "Cargar checklist sugerido".
+
 Screens follow the same pattern for theme-aware styles: read `colors` from `useTheme()`, then
 `const styles = useMemo(() => makeStyles(colors), [colors])` where `makeStyles` is a module-level function
 returning `StyleSheet.create(...)`. Don't build a `StyleSheet` from a static color import at module scope — it won't

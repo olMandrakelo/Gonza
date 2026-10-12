@@ -2,7 +2,7 @@ import React, { useCallback, useMemo, useState } from 'react';
 import { BackHandler, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
-import { Button, Card, Chip, EmptyState, Field, Label, Screen, ScreenHeader } from '../ui/components';
+import { Button, Card, Chip, EmptyState, Field, Label, Screen, ScreenHeader, confirmClear } from '../ui/components';
 import { useTheme } from '../ui/ThemeContext';
 import { Colors, mono, radius, spacing } from '../ui/theme';
 import { useStorageList } from '../storage';
@@ -24,7 +24,7 @@ function shuffle<T>(arr: T[]): T[] {
 export default function QuizScreen() {
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
-  const { items: questions, loading, addItem, removeItem } = useStorageList<Question>('gonza:questions');
+  const { items: questions, loading, addItem, removeItem, clearAll } = useStorageList<Question>('gonza:questions');
   const { items: courses } = useStorageList<Course>('gonza:courses');
   const [mode, setMode] = useState<Mode>('simulacro');
 
@@ -40,7 +40,7 @@ export default function QuizScreen() {
           <Chip label="Banco" selected={mode === 'banco'} onPress={() => setMode('banco')} />
         </View>
         {mode === 'banco' ? (
-          <QuestionBank questions={questions} courses={courses} addItem={addItem} removeItem={removeItem} />
+          <QuestionBank questions={questions} courses={courses} addItem={addItem} removeItem={removeItem} clearAll={clearAll} />
         ) : (
           <Simulacro questions={questions} courses={courses} />
         )}
@@ -54,11 +54,13 @@ function QuestionBank({
   courses,
   addItem,
   removeItem,
+  clearAll,
 }: {
   questions: Question[];
   courses: Course[];
   addItem: (q: Omit<Question, 'id'>) => Promise<Question>;
   removeItem: (id: string) => Promise<void>;
+  clearAll: () => Promise<void>;
 }) {
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
@@ -151,6 +153,11 @@ function QuestionBank({
             </Pressable>
           </View>
         ))}
+        {questions.length > 0 && (
+          <View style={{ marginTop: spacing.lg }}>
+            <Button title="Vaciar preguntas" variant="danger" onPress={() => confirmClear('el banco de preguntas', clearAll)} />
+          </View>
+        )}
       </ScrollView>
     </>
   );

@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { FlatList, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Bar, Button, Card, Chip, EmptyState, Field, Screen, ScreenHeader } from '../ui/components';
+import { Bar, Button, Card, Chip, EmptyState, Field, Screen, ScreenHeader, confirmClear } from '../ui/components';
 import { useTheme } from '../ui/ThemeContext';
 import { Colors, mono, radius, spacing } from '../ui/theme';
 import { useStorageList } from '../storage';
@@ -21,7 +21,7 @@ export default function CoursesScreen() {
     en_curso: colors.warning,
     hecho: colors.ok,
   };
-  const { items, loading, addItem, updateItem, removeItem } = useStorageList<Course>('gonza:courses');
+  const { items, loading, addItem, updateItem, removeItem, clearAll } = useStorageList<Course>('gonza:courses');
   const [showForm, setShowForm] = useState(false);
   const [name, setName] = useState('');
   const [provider, setProvider] = useState('');
@@ -92,6 +92,13 @@ export default function CoursesScreen() {
           keyExtractor={(c) => c.id}
           contentContainerStyle={styles.list}
           ListEmptyComponent={<EmptyState text="Todavía no cargaste cursos. Tocá + Curso para empezar." />}
+          ListFooterComponent={
+            items.length > 0 ? (
+              <View style={{ marginTop: spacing.lg }}>
+                <Button title="Vaciar cursos" variant="danger" onPress={() => confirmClear('cursos', clearAll)} />
+              </View>
+            ) : null
+          }
           renderItem={({ item }) => (
             <View style={styles.row}>
               <Pressable style={styles.rowBody} onPress={() => updateItem(item.id, { status: nextStatus(item.status) })}>

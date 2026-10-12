@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Linking, ScrollView, StyleSheet, Text, View, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Button, Card, Chip, EmptyState, Field, Screen, ScreenHeader } from '../ui/components';
+import { Button, Card, Chip, EmptyState, Field, Screen, ScreenHeader, confirmClear } from '../ui/components';
 import { useTheme } from '../ui/ThemeContext';
 import { Colors, mono, spacing } from '../ui/theme';
 import { useStorageList, useStorageObject } from '../storage';
@@ -33,7 +33,7 @@ export default function FamilyScreen() {
 function Members() {
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
-  const { items, addItem, updateItem, removeItem } = useStorageList<FamilyMember>('gonza:family');
+  const { items, addItem, updateItem, removeItem, clearAll } = useStorageList<FamilyMember>('gonza:family');
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [name, setName] = useState('');
@@ -137,6 +137,11 @@ function Members() {
             </Pressable>
           </Pressable>
         ))}
+        {items.length > 0 && (
+          <View style={{ marginTop: spacing.lg }}>
+            <Button title="Vaciar integrantes" variant="danger" onPress={() => confirmClear('los integrantes', clearAll)} />
+          </View>
+        )}
       </ScrollView>
     </>
   );
