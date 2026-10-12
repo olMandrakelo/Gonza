@@ -8,6 +8,7 @@ import { Colors, progressColor, spacing } from '../ui/theme';
 import { useStorageList, useStorageObject } from '../storage';
 import { Bag, Course, FamilyMember, FamilyPlan, GearItem, emptyFamilyPlan } from '../types';
 import { byBag, readiness, topPending } from '../progress';
+import { GearAlert, computeAlerts } from '../alerts';
 import { EMERGENCY_NUMBERS } from '../emergencyNumbers';
 
 const QUICK_NUMBERS = EMERGENCY_NUMBERS.filter((n) => n.dial === '911' || n.dial === '107');
@@ -38,6 +39,13 @@ export default function HomeScreen() {
   const bagRows = useMemo(() => byBag(items, bags).filter((r) => r.total > 0), [items, bags]);
   const pending = useMemo(() => topPending(items, 5), [items]);
   const pct = Math.round(stats.ratio * 100);
+  const alerts = useMemo(() => computeAlerts(items), [items]);
+
+  function alertText(a: GearAlert) {
+    if (a.kind === 'vencido') return `${a.item.name} — vencido`;
+    if (a.kind === 'vence') return `${a.item.name} — vence en ${a.daysLeft} ${a.daysLeft === 1 ? 'día' : 'días'}`;
+    return a.item.lastReviewedAt ? `${a.item.name} — toca revisar` : `${a.item.name} — sin revisar todavía`;
+  }
 
   const notices: string[] = [];
   if (!plan.address.trim()) notices.push('Tu plan de emergencia no tiene dirección.');
@@ -125,6 +133,17 @@ export default function HomeScreen() {
                 <Pressable key={it.id} style={styles.pendingRow} onPress={() => navigation.navigate('Equipo')}>
                   <Text style={styles.pendingName}>{it.name}</Text>
                   <Text style={styles.pendingCat}>{it.category}</Text>
+                </Pressable>
+              ))}
+            </Card>
+          )}
+
+          {alerts.total > 0 && (
+            <Card>
+              <Label>Para revisar</Label>
+              {[...alerts.expired, ...alerts.soon, ...alerts.reviews].map((a) => (
+                <Pressable key={`${a.kind}-${a.item.id}`} style={styles.pendingRow} onPress={() => navigation.navigate('Equipo')}>
+                  <Text style={[styles.pendingName, a.kind === 'vencido' && { color: colors.danger }]}>{alertText(a)}</Text>
                 </Pressable>
               ))}
             </Card>

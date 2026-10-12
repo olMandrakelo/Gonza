@@ -10,6 +10,7 @@ import { useStorageList } from '../storage';
 import { Bag, GEAR_CATEGORIES, GearCategory, GearItem } from '../types';
 import { buildSeed } from '../seedData';
 import { UNASSIGNED, byBag, byCategory } from '../progress';
+import { SOON_DAYS, addMonths, parseExpiry } from '../alerts';
 import { CATALOG_ITEMS } from '../catalog';
 
 /** Tap-to-pick presets offered alongside the free-text emoji field when naming a mochila. */
@@ -26,6 +27,33 @@ type ViewMode =
   | { kind: 'todos' }
   | { kind: 'category'; value: GearCategory }
   | { kind: 'bag'; value: string };
+
+function fmtDate(d: Date) {
+  return `${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+}
+
+/** Small status lines under an item: expiry and periodic-check state. */
+function itemNotes(it: GearItem): { text: string; warn: boolean }[] {
+  const out: { text: string; warn: boolean }[] = [];
+  const exp = parseExpiry(it.expiresAt);
+  if (it.expiresAt) {
+    if (!exp) out.push({ text: `Vence: ${it.expiresAt}`, warn: false });
+    else {
+      const days = Math.ceil((exp.getTime() - Date.now()) / 86400000);
+      if (days < 0) out.push({ text: `Vencido (${it.expiresAt})`, warn: true });
+      else out.push({ text: `Vence ${it.expiresAt}`, warn: days <= SOON_DAYS });
+    }
+  }
+  if (it.reviewEveryMonths) {
+    const last = it.lastReviewedAt ? new Date(it.lastReviewedAt) : null;
+    if (!last || isNaN(last.getTime())) out.push({ text: `Control cada ${it.reviewEveryMonths} m · sin revisar todavía`, warn: true });
+    else {
+      const due = addMonths(last, it.reviewEveryMonths);
+      out.push({ text: `Control cada ${it.reviewEveryMonths} m · próximo ${fmtDate(due)}`, warn: due.getTime() < Date.now() });
+    }
+  }
+  return out;
+}
 
 export default function ChecklistScreen() {
   const { colors } = useTheme();
@@ -61,6 +89,9 @@ export default function ChecklistScreen() {
   const [name, setName] = useState('');
   const [category, setCategory] = useState<GearCategory>('Otros');
   const [quantity, setQuantity] = useState('');
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [expiresAt, setExpiresAt] = useState('');
+  const [reviewEvery, setReviewEvery] = useState('');
   const [bagId, setBagId] = useState<string | undefined>(undefined);
 
   const [showBagForm, setShowBagForm] = useState(false);
@@ -90,7 +121,21 @@ export default function ChecklistScreen() {
     setCategory('Otros');
     setQuantity('');
     setBagId(undefined);
+    setEditingId(null);
+    setExpiresAt('');
+    setReviewEvery('');
     setShowForm(false);
+  }
+
+  function startEdit(it: GearItem) {
+    setEditingId(it.id);
+    setName(it.name);
+    setCategory(it.category);
+    setQuantity(it.quantity ?? '');
+    setBagId(it.bagId);
+    setExpiresAt(it.expiresAt ?? '');
+    setReviewEvery(it.reviewEveryMonths ? String(it.reviewEveryMonths) : '');
+    setShowForm(true);
   }
 
   // The category/bag drill-down and the add form are local state, not navigation-stack entries,
@@ -140,10 +185,27 @@ export default function ChecklistScreen() {
     }, [])
   );
 
-  async function handleAdd() {
+  async function handleSave() {
     if (!name.trim()) return;
-    await addItem({ name: name.trim(), category, have: false, quantity: quantity.trim() || undefined, bagId });
+    const months = parseInt(reviewEvery, 10);
+    const fields = {
+      name: name.trim(),
+      category,
+      quantity: quantity.trim() || undefined,
+      bagId,
+      expiresAt: expiresAt.trim() || undefined,
+      reviewEveryMonths: months > 0 ? months : undefined,
+    };
+    if (editingId) {
+      await updateItem(editingId, fields);
+    } else {
+      await addItem({ ...fields, have: false });
+    }
     resetForm();
+  }
+
+  function markReviewed(it: GearItem) {
+    updateItem(it.id, { lastReviewedAt: new Date().toISOString() });
   }
 
   function resetBagForm() {
@@ -215,6 +277,8 @@ export default function ChecklistScreen() {
                 ))}
               </ScrollView>
               <Field label="Cantidad (opcional)" value={quantity} onChangeText={setQuantity} placeholder="Ej: 2 unidades" />
+              <Field label="Vence (opcional)" value={expiresAt} onChangeText={setExpiresAt} placeholder="MM/AAAA" keyboardType="numbers-and-punctuation" />
+              <Field label="Revisar cada (meses, opcional)" value={reviewEvery} onChangeText={setReviewEvery} placeholder="Ej: 6 — para pilas y baterías" keyboardType="number-pad" />
               {bags.length > 0 && (
                 <>
                   <Label>Mochila (opcional)</Label>
@@ -231,7 +295,7 @@ export default function ChecklistScreen() {
                   </ScrollView>
                 </>
               )}
-              <Button title="Guardar" onPress={handleAdd} />
+              <Button title={editingId ? 'Guardar cambios' : 'Guardar'} onPress={handleSave} />
             </Card>
           </View>
         )}
@@ -370,7 +434,20 @@ export default function ChecklistScreen() {
                   <Text style={[styles.itemName, item.have && styles.itemNameDone]}>{item.name}</Text>
                   {(view.kind === 'todos' || view.kind === 'bag') && <Text style={styles.itemCat}>{item.category}</Text>}
                   {item.quantity ? <Text style={styles.itemQuantity}>{item.quantity}</Text> : null}
+                  {itemNotes(item).map((n) => (
+                    <Text key={n.text} style={[styles.itemQuantity, n.warn && { color: colors.warning }]}>
+                      {n.text}
+                    </Text>
+                  ))}
+                  {item.reviewEveryMonths ? (
+                    <Pressable hitSlop={8} onPress={() => markReviewed(item)}>
+                      <Text style={styles.reviewBtn}>Revisado hoy ›</Text>
+                    </Pressable>
+                  ) : null}
                 </View>
+                <Pressable hitSlop={12} onPress={() => startEdit(item)}>
+                  <Text style={styles.remove}>✎</Text>
+                </Pressable>
                 <Pressable hitSlop={12} onPress={() => removeItem(item.id)}>
                   <Text style={styles.remove}>✕</Text>
                 </Pressable>
@@ -480,6 +557,7 @@ function makeStyles(colors: Colors) {
     itemName: { color: colors.text, fontSize: 15 },
     itemNameDone: { color: colors.textMuted },
     itemCat: { fontFamily: colors.fonts.label, fontSize: 10, letterSpacing: 0.8, textTransform: 'uppercase', color: colors.textMuted, marginTop: 2 },
+    reviewBtn: { fontFamily: colors.fonts.label, fontSize: 11, fontWeight: '700', color: colors.accent, marginTop: 6, textTransform: 'uppercase', letterSpacing: 0.6 },
     itemQuantity: { fontSize: 12, lineHeight: 16, color: colors.textMuted, marginTop: 3 },
     remove: { color: colors.textMuted, fontSize: 15, paddingHorizontal: spacing.xs },
   });

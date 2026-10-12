@@ -38,6 +38,12 @@ There is no test suite yet.
 - `src/progress.ts` — pure progress maths shared by Equipo and Inicio: `readiness`, `byCategory`, `byBag` (with the
   synthetic `UNASSIGNED` "Sin mochila" row) and `topPending` (water and health first). Keep one source so both
   screens always show the same numbers.
+- `src/alerts.ts` — `computeAlerts(items, now)`: the single source for "what needs attention", used by Inicio's
+  "Para revisar" card (and meant for the notification scheduler later). Reads three optional `GearItem` fields:
+  `expiresAt` (free text, "MM/AAAA" = end of that month, or "DD/MM/AAAA"; anything unreadable is ignored rather
+  than blocking a save), `reviewEveryMonths` and `lastReviewedAt` (periodic checks such as batteries; an item
+  never reviewed counts as due). Buckets: vencidos, vencen en ≤30 días, controles a ≤7 días. Equipo shows the same
+  state under each item and a "Revisado hoy" button that stamps `lastReviewedAt`; items are now editable via ✎.
 - `src/seedData.ts` — `SEED_BAGS` (the 4 backpacks from the "Día Cero" 72h guide: líder, apoyo, niñ@ 1, niñ@ 2) and
   `SEED_ITEMS_BY_BAG` (one items array per bag, transcribed straight from the guide rather than consolidated, so the
   suggested checklist loads split by mochila instead of as one flat list). `buildSeed()` assigns fresh ids to both

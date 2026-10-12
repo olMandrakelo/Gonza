@@ -31,6 +31,12 @@ export interface GearItem {
    * own have status — not one item referencing multiple bags — since each bag needs its own
    * physical unit anyway. */
   bagId?: string;
+  /** Expiry as "MM/AAAA" (end of that month) or "DD/MM/AAAA". Free text so a typo never blocks saving;
+   * parseExpiry() in alerts.ts ignores anything it can't read. */
+  expiresAt?: string;
+  /** Periodic check (e.g. batteries): every N months, counted from lastReviewedAt (an ISO date). */
+  reviewEveryMonths?: number;
+  lastReviewedAt?: string;
 }
 
 export interface Bag {
