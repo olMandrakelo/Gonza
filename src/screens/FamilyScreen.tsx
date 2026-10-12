@@ -142,10 +142,28 @@ function Members() {
   );
 }
 
+function buildPlanMessage(plan: FamilyPlan): string {
+  const lines = ['📋 Plan de emergencia familiar', ''];
+  lines.push(`🏠 Dirección: ${plan.address.trim() || '(sin cargar)'}`);
+  const routes = plan.routes.filter((r) => r.meetingPoint.trim() || r.plan.trim());
+  for (const r of routes) {
+    lines.push('', `Ruta ${r.label}`);
+    if (r.meetingPoint.trim()) lines.push(`📍 Punto de encuentro: ${r.meetingPoint.trim()}`);
+    if (r.plan.trim()) lines.push(r.plan.trim());
+  }
+  return lines.join('\n');
+}
+
+function waLink(phone: string, message: string): string {
+  const digits = phone.replace(/[^0-9]/g, '');
+  return `https://wa.me/${digits}?text=${encodeURIComponent(message)}`;
+}
+
 function Plan() {
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const { value: stored, loading, save } = useStorageObject<FamilyPlan>('gonza:family-plan', emptyFamilyPlan);
+  const { items: members } = useStorageList<FamilyMember>('gonza:family');
   const [draft, setDraft] = useState<FamilyPlan>(emptyFamilyPlan);
   const [hydrated, setHydrated] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -215,6 +233,28 @@ function Plan() {
       ))}
 
       <Button title={saved ? 'Guardado ✓' : 'Guardar plan'} onPress={handleSave} />
+
+      {members.some((m) => m.phone1) && (
+        <Card>
+          <Text style={styles.routeLabel}>Enviar a la familia</Text>
+          {members
+            .filter((m) => m.phone1)
+            .map((m) => (
+              <Pressable
+                key={m.id}
+                style={styles.waRow}
+                onPress={() => Linking.openURL(waLink(m.phone1 as string, buildPlanMessage(draft)))}
+              >
+                <Text style={styles.waName}>{m.name}</Text>
+                <Text style={styles.waAction}>WhatsApp ›</Text>
+              </Pressable>
+            ))}
+          <Text style={styles.waNote}>
+            Abre WhatsApp con el mensaje listo — lo mandás vos desde ahí. Si un número no tiene código de país
+            guardado, puede no abrir el chat correcto.
+          </Text>
+        </Card>
+      )}
     </ScrollView>
   );
 }
@@ -258,6 +298,18 @@ function makeStyles(colors: Colors) {
     },
     emergencyLabel: { color: colors.text, fontSize: 14 },
     emergencyNumber: { fontFamily: mono, fontSize: 14, fontWeight: '700', color: colors.accent },
+
+    waRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingVertical: spacing.sm,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    waName: { color: colors.text, fontSize: 14 },
+    waAction: { fontFamily: mono, fontSize: 12, color: colors.ok, textTransform: 'uppercase', letterSpacing: 0.6 },
+    waNote: { fontSize: 11, color: colors.textMuted, marginTop: spacing.sm, lineHeight: 15 },
 
     routeLabel: {
       fontFamily: mono,

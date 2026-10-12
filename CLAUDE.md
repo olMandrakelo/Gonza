@@ -96,7 +96,12 @@ There is no test suite yet.
   - `FamilyScreen.tsx` — two modes: `Integrantes` (CRUD list of `FamilyMember`, one per person: contacts, blood
     type, allergies — a phone1 shows a tap-to-call 📞) and `Plan de emergencia` (the static `EMERGENCY_NUMBERS`
     tap-to-call list, then the single `FamilyPlan` — address plus routes A–D). The plan is edited as local draft
-    state and written in one `save()` call from an explicit button, not per-keystroke.
+    state and written in one `save()` call from an explicit button, not per-keystroke. Below that, "Enviar a la
+    familia" lists every member with a `phone1` and opens `https://wa.me/<digits>?text=...` (via `Linking`) with
+    the current draft formatted by `buildPlanMessage()` — WhatsApp opens with the chat and message prefilled, the
+    user still taps send themselves. This is deliberately not real sync: the app stays local-first/no-backend, so
+    "share with the family" means "hand them a prefilled message," not a shared live document. `waLink()` strips
+    non-digits from the stored phone string; a number saved without its country code may open the wrong chat.
   - `SettingsScreen.tsx` — theme mode and accent color picker, backed by `useTheme()`.
 
 Screens follow the same pattern for theme-aware styles: read `colors` from `useTheme()`, then
