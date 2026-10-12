@@ -64,9 +64,22 @@ There is no test suite yet.
 - `src/ui/components.tsx` — shared primitives (`Screen`, `ScreenHeader`, `Card`, `Field`, `Label`, `Chip`, `Button`,
   `Meter`, `Bar`, `EmptyState`), each reading colors from `useTheme()` and building their `StyleSheet` via `useMemo`
   so they re-theme live. `ScreenHeader` is the section-code + title masthead every screen opens with.
-- `src/ui/icons.tsx` — tab icons built from plain `View`s (borders and radii), not SVG or an icon font. Both of those
-  are native modules: adding one would force a fresh `eas build` and break the over-the-air update path, so icon work
-  must stay within RN primitives unless a native rebuild is already planned.
+- `src/ui/icons.tsx` — tab icons drawn with `react-native-svg` (native; arrived in the 1.3.0 build). `TabIcon` renders one
+  of seven paths in three user-selectable variants (`fino` / `grueso` / `duotono`, Ajustes → Íconos, persisted as
+  `gonza:theme-icons`); `ICON_SETS` lists them for the picker.
+- `src/ui/fonts.ts` — bundled fonts (Plus Jakarta Sans, Barlow Condensed, Fraunces, Figtree, JetBrains Mono from
+  `@expo-google-fonts/*`, one file per weight imported by subpath so only the needed weights ship). `ThemeProvider`
+  registers them with `useFonts` and holds the first frame until they load. `STYLE_FONTS` is each style's own
+  title/label pairing; `FONT_CHOICES` are the picks offered in Ajustes → Fuente de títulos (`gonza:theme-font`,
+  default "Según el estilo").
+- `src/backup.ts` — Ajustes → Copia de seguridad: `exportBackup()` writes every `gonza:*` key to a JSON file and opens the
+  share sheet; `pickBackup()` + `applyBackup()` restore one (validated by a `format` marker, replaces all data, always
+  sets the seed flag, then the app reloads via `Updates.reloadAsync()`).
+- `src/notifications.ts` — local reminders over `expo-notifications` (no server): `rescheduleReminders(items)` cancels all
+  and re-schedules a reminder `leadDays` before each expiry, on the expiry day, when each periodic check falls due, plus
+  a next-morning digest when `computeAlerts` already has something. Inicio calls it whenever it sees new gear data;
+  settings live under `gonza:notifications` (off by default, permission asked when enabled). Android may delay these
+  in battery-saver mode, so Inicio's "Para revisar" card remains the reliable source.
 - `src/catalog.ts` — `CATALOG_ITEMS`, ~90 common gear names/categories (no quantities) offered in the "+ Ítem"
   picker so most entries can be tapped instead of typed. Independent from `seedData.ts`'s starter checklist.
 - `src/ui/ItemPickerModal.tsx` — search + tap-to-select bottom sheet over `CATALOG_ITEMS`, grouped by category via
@@ -151,6 +164,13 @@ switcher moved the app to 1.2.0. That means:
   those up over the air.
 - Everything else (screens, styles, logic, the theme system) ships as a plain OTA update once the above CI is set up.
 
+**1.3.0 (versionCode 4)** added native modules: `react-native-svg`, `expo-contacts` (family "Elegir de contactos" uses
+`expo-contacts/legacy` `presentContactPickerAsync`; permission `READ_CONTACTS`), `expo-notifications`
+(`POST_NOTIFICATIONS`), `expo-font`, `expo-document-picker`, `expo-sharing` and `expo-file-system/legacy`. Installs still on
+1.2.0 stop receiving updates (different runtimeVersion) until they install the 1.3.0 APK, which goes over the existing
+install and keeps its data (same package). Build flow on the PC: `git pull`, `npm install`, then
+`eas build --platform android --profile preview`.
+
 ## Visual direction
 
 The look is a selectable **style** (Ajustes → Estilo), independent of light/dark mode and accent: `limpio` (cool
@@ -159,8 +179,7 @@ condensed uppercase titles, flat bordered cards) and `oliva` (the original olive
 monospace labels — the default for existing installs). A style supplies the base palette per scheme, corner radii,
 typefaces, title transform and whether cards use shadow or a hairline border (`STYLE_PRESETS` in `src/ui/theme.ts`).
 Switching style also resets the accent to that style's default (`defaultAccent`); the accent picker still overrides.
-Fonts are system families only (`sans-serif`, `sans-serif-condensed`, `serif`, `monospace`) — web fonts would need a
-native font module and break OTA. Colour still carries one meaning each: accent marks interactive and "short on
+Fonts are bundled files (see `src/ui/fonts.ts`); each style has its own pairing and the user can override the title font. Colour still carries one meaning each: accent marks interactive and "short on
 this", `colors.ok` marks done, `colors.warning` marks halfway.
 
 Style tokens ride on the `colors` object every screen already gets (`colors.radius`, `colors.fonts.{title,label}`,

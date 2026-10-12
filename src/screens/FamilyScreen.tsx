@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Linking, ScrollView, StyleSheet, Text, View, Pressable } from 'react-native';
+import { Alert, Linking, ScrollView, StyleSheet, Text, View, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
 import { Button, Card, Chip, EmptyState, Field, Screen, ScreenHeader, confirmClear } from '../ui/components';
@@ -7,6 +7,7 @@ import { useTheme } from '../ui/ThemeContext';
 import { Colors, spacing } from '../ui/theme';
 import { useStorageList, useStorageObject } from '../storage';
 import { EvacuationRoute, FamilyMember, FamilyPlan, emptyFamilyPlan } from '../types';
+import * as Contacts from 'expo-contacts/legacy';
 import { EMERGENCY_NUMBERS } from '../emergencyNumbers';
 
 type Mode = 'integrantes' | 'plan';
@@ -69,6 +70,21 @@ function Members() {
     setShowForm(false);
   }
 
+  async function pickFromContacts() {
+    try {
+      const contact = await Contacts.presentContactPickerAsync();
+      if (!contact) return;
+      if (contact.name) setName(contact.name);
+      const phones = contact.phoneNumbers ?? [];
+      // Keep a leading "+" (country code) but drop spaces, dashes and parentheses so wa.me/tel links work.
+      const clean = (n?: string) => (n ?? '').replace(/[^\d+]/g, '');
+      if (phones[0]?.number) setPhone1(clean(phones[0].number));
+      if (phones[1]?.number) setPhone2(clean(phones[1].number));
+    } catch {
+      Alert.alert('No se pudo abrir la agenda', 'Revisá que la app tenga permiso para contactos.');
+    }
+  }
+
   function startEdit(m: FamilyMember) {
     setEditingId(m.id);
     setName(m.name);
@@ -111,6 +127,8 @@ function Members() {
       <ScrollView contentContainerStyle={styles.list}>
         {showForm && (
           <Card>
+            {!editingId && <Button title="Elegir de contactos" variant="secondary" onPress={pickFromContacts} />}
+            <View style={{ height: spacing.md }} />
             <Field label="Nombre" value={name} onChangeText={setName} placeholder="Ej: María" />
             <Field label="Teléfono de contacto 1" value={phone1} onChangeText={setPhone1} keyboardType="phone-pad" />
             <Field label="Teléfono de contacto 2 (opcional)" value={phone2} onChangeText={setPhone2} keyboardType="phone-pad" />

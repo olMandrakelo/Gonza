@@ -12,7 +12,7 @@ import QuizScreen from './src/screens/QuizScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
 import { seedGearIfNeeded } from './src/seedData';
 import { ThemeProvider, useTheme } from './src/ui/ThemeContext';
-import { TAB_ICONS } from './src/ui/icons';
+import { TabIcon } from './src/ui/icons';
 
 const Tab = createBottomTabNavigator();
 
@@ -54,10 +54,7 @@ function Navigation() {
               letterSpacing: 0.6,
               textTransform: 'uppercase',
             },
-            tabBarIcon: ({ color }) => {
-              const Icon = TAB_ICONS[route.name];
-              return Icon ? <Icon color={color} bg={colors.surface} /> : null;
-            },
+            tabBarIcon: ({ color }) => <TabIcon name={route.name} color={color} />,
           })}
         >
           <Tab.Screen name="Inicio" component={HomeScreen} />

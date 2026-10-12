@@ -1,4 +1,5 @@
 import { Platform } from 'react-native';
+import { FONT_CHOICES, FontKey, STYLE_FONTS } from './fonts';
 
 export const spacing = {
   xs: 4,
@@ -82,10 +83,6 @@ type BasePalette = {
   ok: string;
 };
 
-const sans = Platform.select({ ios: 'System', android: 'sans-serif', default: 'System' });
-const sansMedium = Platform.select({ ios: 'System', android: 'sans-serif-medium', default: 'System' });
-const condensed = Platform.select({ ios: 'AvenirNextCondensed-DemiBold', android: 'sans-serif-condensed', default: 'System' });
-const serif = Platform.select({ ios: 'Georgia', android: 'serif', default: 'serif' });
 
 export interface StylePreset {
   label: string;
@@ -111,7 +108,7 @@ export const STYLE_PRESETS: Record<StyleKey, StylePreset> = {
     description: 'Claro, tarjetas redondeadas',
     defaultAccent: 'menta',
     radius: { sm: 10, md: 16, lg: 22 },
-    fonts: { title: sansMedium as string, label: sans as string },
+    fonts: STYLE_FONTS.limpio,
     titleTransform: 'none',
     elevated: true,
     light: {
@@ -142,7 +139,7 @@ export const STYLE_PRESETS: Record<StyleKey, StylePreset> = {
     description: 'Oscuro, alto contraste',
     defaultAccent: 'dorado',
     radius: { sm: 4, md: 8, lg: 12 },
-    fonts: { title: condensed as string, label: condensed as string },
+    fonts: STYLE_FONTS.tactico,
     titleTransform: 'uppercase',
     elevated: false,
     light: {
@@ -173,7 +170,7 @@ export const STYLE_PRESETS: Record<StyleKey, StylePreset> = {
     description: 'Verde oliva, tipografía serif',
     defaultAccent: 'senal',
     radius: { sm: 6, md: 10, lg: 14 },
-    fonts: { title: serif as string, label: mono as string },
+    fonts: STYLE_FONTS.oliva,
     titleTransform: 'none',
     elevated: false,
     light: {
@@ -205,7 +202,12 @@ export function normalizeStyleKey(stored: string | null): StyleKey | null {
   return stored === 'limpio' || stored === 'tactico' || stored === 'oliva' ? stored : null;
 }
 
-export function buildColors(scheme: Scheme, accentKey: AccentKey, styleKey: StyleKey = 'oliva') {
+export function buildColors(
+  scheme: Scheme,
+  accentKey: AccentKey,
+  styleKey: StyleKey = 'oliva',
+  fontKey: FontKey = 'estilo'
+) {
   const preset = STYLE_PRESETS[styleKey];
   const base = preset[scheme];
   const accent = ACCENT_PRESETS[accentKey][scheme];
@@ -214,7 +216,7 @@ export function buildColors(scheme: Scheme, accentKey: AccentKey, styleKey: Styl
     accent: accent.accent,
     accentMuted: accent.accentMuted,
     radius: preset.radius,
-    fonts: preset.fonts,
+    fonts: fontKey === 'estilo' ? preset.fonts : FONT_CHOICES[fontKey].fonts,
     titleTransform: preset.titleTransform,
     elevated: preset.elevated,
   };

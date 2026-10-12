@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo } from 'react';
 import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
@@ -9,6 +9,7 @@ import { useStorageList, useStorageObject } from '../storage';
 import { Bag, Course, FamilyMember, FamilyPlan, GearItem, emptyFamilyPlan } from '../types';
 import { byBag, readiness, topPending } from '../progress';
 import { GearAlert, computeAlerts } from '../alerts';
+import { rescheduleReminders } from '../notifications';
 import { EMERGENCY_NUMBERS } from '../emergencyNumbers';
 
 const QUICK_NUMBERS = EMERGENCY_NUMBERS.filter((n) => n.dial === '911' || n.dial === '107');
@@ -34,6 +35,11 @@ export default function HomeScreen() {
       reloadPlan();
     }, [reloadGear, reloadBags, reloadCourses, reloadMembers, reloadPlan])
   );
+
+  // Rebuild local reminders whenever the gear data Inicio sees changes (a no-op if reminders are off).
+  useEffect(() => {
+    if (!loading) rescheduleReminders(items).catch(() => {});
+  }, [items, loading]);
 
   const stats = useMemo(() => readiness(items), [items]);
   const bagRows = useMemo(() => byBag(items, bags).filter((r) => r.total > 0), [items, bags]);

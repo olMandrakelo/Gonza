@@ -1,5 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { useColorScheme } from 'react-native';
+import { useFonts } from 'expo-font';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   AccentKey,
@@ -13,10 +14,15 @@ import {
   normalizeStyleKey,
   spacing,
 } from './theme';
+import { FONT_FILES, FontKey, normalizeFontKey } from './fonts';
+
+export type IconSet = 'fino' | 'grueso' | 'duotono';
 
 const MODE_KEY = 'gonza:theme-mode';
 const ACCENT_KEY = 'gonza:theme-accent';
 const STYLE_KEY = 'gonza:theme-style';
+const FONT_KEY = 'gonza:theme-font';
+const ICON_KEY = 'gonza:theme-icons';
 
 interface ThemeContextValue {
   mode: ThemeMode;
@@ -26,6 +32,10 @@ interface ThemeContextValue {
   styleKey: StyleKey;
   /** Switches the whole look and resets the accent to that style's default; pick an accent afterwards to override. */
   setStyleKey: (s: StyleKey) => void;
+  fontKey: FontKey;
+  setFontKey: (f: FontKey) => void;
+  iconSet: IconSet;
+  setIconSet: (i: IconSet) => void;
   colors: Colors;
   spacing: typeof spacing;
   scheme: Scheme;
@@ -38,6 +48,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [mode, setModeState] = useState<ThemeMode>('dark');
   const [accentKey, setAccentKeyState] = useState<AccentKey>('senal');
   const [styleKey, setStyleKeyState] = useState<StyleKey>('oliva');
+  const [fontKey, setFontKeyState] = useState<FontKey>('estilo');
+  const [iconSet, setIconSetState] = useState<IconSet>('fino');
+  const [fontsLoaded, fontError] = useFonts(FONT_FILES);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
@@ -46,14 +59,19 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       AsyncStorage.getItem(MODE_KEY),
       AsyncStorage.getItem(ACCENT_KEY),
       AsyncStorage.getItem(STYLE_KEY),
+      AsyncStorage.getItem(FONT_KEY),
+      AsyncStorage.getItem(ICON_KEY),
     ]).then(
-      ([storedMode, storedAccent, storedStyle]) => {
+      ([storedMode, storedAccent, storedStyle, storedFont, storedIcons]) => {
         if (cancelled) return;
         if (storedMode === 'dark' || storedMode === 'light' || storedMode === 'system') setModeState(storedMode);
         const accent = normalizeAccentKey(storedAccent);
         if (accent) setAccentKeyState(accent);
         const style = normalizeStyleKey(storedStyle);
         if (style) setStyleKeyState(style);
+        const font = normalizeFontKey(storedFont);
+        if (font) setFontKeyState(font);
+        if (storedIcons === 'fino' || storedIcons === 'grueso' || storedIcons === 'duotono') setIconSetState(storedIcons);
         setLoaded(true);
       }
     );
@@ -80,15 +98,26 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     AsyncStorage.setItem(ACCENT_KEY, accent);
   }, []);
 
+  const setFontKey = useCallback((f: FontKey) => {
+    setFontKeyState(f);
+    AsyncStorage.setItem(FONT_KEY, f);
+  }, []);
+
+  const setIconSet = useCallback((i: IconSet) => {
+    setIconSetState(i);
+    AsyncStorage.setItem(ICON_KEY, i);
+  }, []);
+
   const scheme: Scheme = mode === 'system' ? (systemScheme === 'light' ? 'light' : 'dark') : mode;
-  const colors = useMemo(() => buildColors(scheme, accentKey, styleKey), [scheme, accentKey, styleKey]);
+  const colors = useMemo(() => buildColors(scheme, accentKey, styleKey, fontKey), [scheme, accentKey, styleKey, fontKey]);
 
   const value = useMemo<ThemeContextValue>(
-    () => ({ mode, setMode, accentKey, setAccentKey, styleKey, setStyleKey, colors, spacing, scheme }),
-    [mode, setMode, accentKey, setAccentKey, styleKey, setStyleKey, colors, scheme]
+    () => ({ mode, setMode, accentKey, setAccentKey, styleKey, setStyleKey, fontKey, setFontKey, iconSet, setIconSet, colors, spacing, scheme }),
+    [mode, setMode, accentKey, setAccentKey, styleKey, setStyleKey, fontKey, setFontKey, iconSet, setIconSet, colors, scheme]
   );
 
-  if (!loaded) return null;
+  // Hold the first frame until stored preferences and the bundled fonts are ready (a font error still proceeds).
+  if (!loaded || !(fontsLoaded || fontError)) return null;
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 }
