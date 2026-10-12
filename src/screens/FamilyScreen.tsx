@@ -1,0 +1,410 @@
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { Alert, Linking, ScrollView, StyleSheet, Text, View, Pressable } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
+import { Button, Card, Chip, EmptyState, Field, Screen, ScreenHeader, confirmClear } from '../ui/components';
+import { useTheme } from '../ui/ThemeContext';
+import { Colors, spacing } from '../ui/theme';
+import { useStorageList, useStorageObject } from '../storage';
+import { EvacuationRoute, FamilyMember, FamilyPlan, emptyFamilyPlan } from '../types';
+import * as Contacts from 'expo-contacts/legacy';
+import { EMERGENCY_NUMBERS } from '../emergencyNumbers';
+
+type Mode = 'integrantes' | 'plan';
+
+export default function FamilyScreen() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const route = useRoute<any>();
+  const navigation = useNavigation<any>();
+  const [mode, setMode] = useState<Mode>('integrantes');
+
+  // Inicio's "Plan de salida" shortcut navigates here with { mode: 'plan' }.
+  const modeParam: Mode | undefined = route.params?.mode;
+  useFocusEffect(
+    useCallback(() => {
+      if (!modeParam) return;
+      setMode(modeParam);
+      navigation.setParams({ mode: undefined });
+    }, [modeParam, navigation])
+  );
+  const { items: members } = useStorageList<FamilyMember>('gonza:family');
+
+  return (
+    <SafeAreaView style={styles.safe} edges={['top']}>
+      <Screen>
+        <ScreenHeader code={`Sección 06 · ${members.length} integrantes`} title="Familia" />
+        <View style={styles.modeRow}>
+          <Chip label="Integrantes" selected={mode === 'integrantes'} onPress={() => setMode('integrantes')} />
+          <Chip label="Plan de emergencia" selected={mode === 'plan'} onPress={() => setMode('plan')} />
+        </View>
+        {mode === 'integrantes' ? <Members /> : <Plan />}
+      </Screen>
+    </SafeAreaView>
+  );
+}
+
+function Members() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const { items, addItem, updateItem, removeItem, clearAll } = useStorageList<FamilyMember>('gonza:family');
+  const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [name, setName] = useState('');
+  const [phone1, setPhone1] = useState('');
+  const [phone2, setPhone2] = useState('');
+  const [birthDate, setBirthDate] = useState('');
+  const [bloodType, setBloodType] = useState('');
+  const [allergies, setAllergies] = useState('');
+  const [notes, setNotes] = useState('');
+
+  function resetForm() {
+    setName('');
+    setPhone1('');
+    setPhone2('');
+    setBirthDate('');
+    setBloodType('');
+    setAllergies('');
+    setNotes('');
+    setEditingId(null);
+    setShowForm(false);
+  }
+
+  async function pickFromContacts() {
+    try {
+      // The picker returns only an id; the module then reads the contact itself, which needs the runtime
+      // READ_CONTACTS permission. Without it that read fails natively and the promise never settles
+      // (the screen hangs), so ask first and stop if it's refused.
+      const perm = await Contacts.requestPermissionsAsync();
+      if (!perm.granted) {
+        Alert.alert('Falta el permiso', 'Para elegir de tus contactos, permití el acceso a Contactos y probá de nuevo.');
+        return;
+      }
+      const contact = await Contacts.presentContactPickerAsync();
+      if (!contact) return;
+      if (contact.name) setName(contact.name);
+      const phones = contact.phoneNumbers ?? [];
+      // Keep a leading "+" (country code) but drop spaces, dashes and parentheses so wa.me/tel links work.
+      const clean = (n?: string) => (n ?? '').replace(/[^\d+]/g, '');
+      if (phones[0]?.number) setPhone1(clean(phones[0].number));
+      if (phones[1]?.number) setPhone2(clean(phones[1].number));
+    } catch {
+      Alert.alert('No se pudo abrir la agenda', 'Revisá que la app tenga permiso para contactos.');
+    }
+  }
+
+  function startEdit(m: FamilyMember) {
+    setEditingId(m.id);
+    setName(m.name);
+    setPhone1(m.phone1 ?? '');
+    setPhone2(m.phone2 ?? '');
+    setBirthDate(m.birthDate ?? '');
+    setBloodType(m.bloodType ?? '');
+    setAllergies(m.allergies ?? '');
+    setNotes(m.notes ?? '');
+    setShowForm(true);
+  }
+
+  async function handleSave() {
+    if (!name.trim()) return;
+    const patch = {
+      name: name.trim(),
+      phone1: phone1.trim() || undefined,
+      phone2: phone2.trim() || undefined,
+      birthDate: birthDate.trim() || undefined,
+      bloodType: bloodType.trim() || undefined,
+      allergies: allergies.trim() || undefined,
+      notes: notes.trim() || undefined,
+    };
+    if (editingId) {
+      await updateItem(editingId, patch);
+    } else {
+      await addItem(patch);
+    }
+    resetForm();
+  }
+
+  return (
+    <>
+      <View style={styles.addRow}>
+        <Button
+          title={showForm ? 'Cerrar' : '+ Persona'}
+          onPress={() => (showForm ? resetForm() : setShowForm(true))}
+        />
+      </View>
+      <ScrollView contentContainerStyle={styles.list}>
+        {showForm && (
+          <Card>
+            {!editingId && <Button title="Elegir de contactos" variant="secondary" onPress={pickFromContacts} />}
+            <View style={{ height: spacing.md }} />
+            <Field label="Nombre" value={name} onChangeText={setName} placeholder="Ej: María" />
+            <Field label="Teléfono de contacto 1" value={phone1} onChangeText={setPhone1} keyboardType="phone-pad" />
+            <Field label="Teléfono de contacto 2 (opcional)" value={phone2} onChangeText={setPhone2} keyboardType="phone-pad" />
+            <Field label="Fecha de nacimiento" value={birthDate} onChangeText={setBirthDate} placeholder="DD/MM/AAAA" />
+            <Field label="Grupo sanguíneo" value={bloodType} onChangeText={setBloodType} placeholder="Ej: 0+" autoCapitalize="characters" />
+            <Field label="Alergias" value={allergies} onChangeText={setAllergies} placeholder="Ej: Ninguna" />
+            <Field
+              label="Comentarios"
+              value={notes}
+              onChangeText={setNotes}
+              multiline
+              numberOfLines={3}
+              style={{ minHeight: 70, textAlignVertical: 'top' }}
+            />
+            <Button title={editingId ? 'Guardar cambios' : 'Guardar'} onPress={handleSave} />
+          </Card>
+        )}
+        {items.length === 0 && !showForm && (
+          <EmptyState text="Todavía no cargaste a nadie. Tocá + Persona para empezar." />
+        )}
+        {items.map((m) => (
+          <Pressable key={m.id} style={styles.memberRow} onPress={() => startEdit(m)}>
+            <View style={styles.memberBody}>
+              <Text style={styles.memberName}>{m.name}</Text>
+              <Text style={styles.memberMeta}>
+                {[m.phone1, m.bloodType].filter(Boolean).join(' · ') || 'Sin datos de contacto'}
+              </Text>
+              {m.allergies ? <Text style={styles.memberAllergy}>Alergias: {m.allergies}</Text> : null}
+            </View>
+            {m.phone1 ? (
+              <Pressable hitSlop={12} onPress={() => Linking.openURL(`tel:${m.phone1}`)}>
+                <Text style={styles.call}>📞</Text>
+              </Pressable>
+            ) : null}
+            <Pressable hitSlop={12} onPress={() => removeItem(m.id)}>
+              <Text style={styles.remove}>✕</Text>
+            </Pressable>
+          </Pressable>
+        ))}
+        {items.length > 0 && (
+          <View style={{ marginTop: spacing.lg }}>
+            <Button title="Vaciar integrantes" variant="danger" onPress={() => confirmClear('los integrantes', clearAll)} />
+          </View>
+        )}
+      </ScrollView>
+    </>
+  );
+}
+
+/** A pasted Google Maps share link if there is one, otherwise a Maps search built from the
+ * free-text address/meeting point — null only when neither is available. */
+function mapsUrlFor(link: string, fallbackQuery: string): string | null {
+  const trimmed = link.trim();
+  if (trimmed) return trimmed;
+  const q = fallbackQuery.trim();
+  return q ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}` : null;
+}
+
+function buildPlanMessage(plan: FamilyPlan): string {
+  const lines = ['📋 Plan de emergencia familiar', ''];
+  lines.push(`🏠 Dirección: ${plan.address.trim() || '(sin cargar)'}`);
+  const homeMapsUrl = mapsUrlFor(plan.mapsLink ?? '', plan.address);
+  if (homeMapsUrl) lines.push(`🗺️ ${homeMapsUrl}`);
+  const routes = plan.routes.filter((r) => r.meetingPoint.trim() || r.plan.trim());
+  for (const r of routes) {
+    lines.push('', `Ruta ${r.label}`);
+    if (r.meetingPoint.trim()) lines.push(`📍 Punto de encuentro: ${r.meetingPoint.trim()}`);
+    const routeMapsUrl = mapsUrlFor(r.mapsLink ?? '', r.meetingPoint);
+    if (routeMapsUrl) lines.push(`🗺️ ${routeMapsUrl}`);
+    if (r.plan.trim()) lines.push(r.plan.trim());
+  }
+  return lines.join('\n');
+}
+
+function waLink(phone: string, message: string): string {
+  const digits = phone.replace(/[^0-9]/g, '');
+  return `https://wa.me/${digits}?text=${encodeURIComponent(message)}`;
+}
+
+function Plan() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const { value: stored, loading, save } = useStorageObject<FamilyPlan>('gonza:family-plan', emptyFamilyPlan);
+  const { items: members } = useStorageList<FamilyMember>('gonza:family');
+  const [draft, setDraft] = useState<FamilyPlan>(emptyFamilyPlan);
+  const [hydrated, setHydrated] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    if (!loading && !hydrated) {
+      setDraft(stored);
+      setHydrated(true);
+    }
+  }, [loading, hydrated, stored]);
+
+  function updateRoute(index: number, patch: Partial<EvacuationRoute>) {
+    setSaved(false);
+    setDraft((d) => ({ ...d, routes: d.routes.map((r, i) => (i === index ? { ...r, ...patch } : r)) }));
+  }
+
+  async function handleSave() {
+    await save(draft);
+    setSaved(true);
+  }
+
+  if (!hydrated) return null;
+
+  return (
+    <ScrollView contentContainerStyle={styles.list}>
+      <Card>
+        <Text style={styles.routeLabel}>Números de emergencia</Text>
+        {EMERGENCY_NUMBERS.map((n) => (
+          <Pressable key={n.label} style={styles.emergencyRow} onPress={() => Linking.openURL(`tel:${n.dial}`)}>
+            <Text style={styles.emergencyLabel}>{n.label}</Text>
+            <Text style={styles.emergencyNumber}>{n.display}</Text>
+          </Pressable>
+        ))}
+      </Card>
+
+      <Card>
+        <Field
+          label="Dirección"
+          value={draft.address}
+          onChangeText={(v) => {
+            setSaved(false);
+            setDraft((d) => ({ ...d, address: v }));
+          }}
+          placeholder="Domicilio familiar"
+        />
+        <Field
+          label="Link de Google Maps (opcional)"
+          value={draft.mapsLink ?? ''}
+          onChangeText={(v) => {
+            setSaved(false);
+            setDraft((d) => ({ ...d, mapsLink: v }));
+          }}
+          placeholder="Pegá el link que te da Maps al compartir la ubicación"
+        />
+        {mapsUrlFor(draft.mapsLink ?? '', draft.address) && (
+          <Pressable onPress={() => Linking.openURL(mapsUrlFor(draft.mapsLink ?? '', draft.address) as string)}>
+            <Text style={styles.waAction}>Abrir en Maps ›</Text>
+          </Pressable>
+        )}
+      </Card>
+
+      {draft.routes.map((route, i) => (
+        <Card key={route.label}>
+          <Text style={styles.routeLabel}>Ruta {route.label}</Text>
+          <Field
+            label="Punto de reunión"
+            value={route.meetingPoint}
+            onChangeText={(v) => updateRoute(i, { meetingPoint: v })}
+            placeholder="Ej: Plaza frente a la escuela"
+          />
+          <Field
+            label="Link de Google Maps (opcional)"
+            value={route.mapsLink ?? ''}
+            onChangeText={(v) => updateRoute(i, { mapsLink: v })}
+            placeholder="Pegá el link que te da Maps al compartir la ubicación"
+          />
+          {mapsUrlFor(route.mapsLink ?? '', route.meetingPoint) && (
+            <Pressable
+              style={styles.mapsLinkRow}
+              onPress={() => Linking.openURL(mapsUrlFor(route.mapsLink ?? '', route.meetingPoint) as string)}
+            >
+              <Text style={styles.waAction}>Abrir en Maps ›</Text>
+            </Pressable>
+          )}
+          <Field
+            label="Plan de evacuación"
+            value={route.plan}
+            onChangeText={(v) => updateRoute(i, { plan: v })}
+            placeholder="Cómo llegar, con quién, qué hacer si no se puede"
+            multiline
+            numberOfLines={3}
+            style={{ minHeight: 70, textAlignVertical: 'top' }}
+          />
+        </Card>
+      ))}
+
+      <Button title={saved ? 'Guardado ✓' : 'Guardar plan'} onPress={handleSave} />
+
+      {members.some((m) => m.phone1) && (
+        <Card>
+          <Text style={styles.routeLabel}>Enviar a la familia</Text>
+          {members
+            .filter((m) => m.phone1)
+            .map((m) => (
+              <Pressable
+                key={m.id}
+                style={styles.waRow}
+                onPress={() => Linking.openURL(waLink(m.phone1 as string, buildPlanMessage(draft)))}
+              >
+                <Text style={styles.waName}>{m.name}</Text>
+                <Text style={styles.waAction}>WhatsApp ›</Text>
+              </Pressable>
+            ))}
+          <Text style={styles.waNote}>
+            Abre WhatsApp con el mensaje listo — lo mandás vos desde ahí. Si un número no tiene código de país
+            guardado, puede no abrir el chat correcto.
+          </Text>
+        </Card>
+      )}
+    </ScrollView>
+  );
+}
+
+function makeStyles(colors: Colors) {
+  return StyleSheet.create({
+    safe: { flex: 1, backgroundColor: colors.background },
+    modeRow: { flexDirection: 'row', paddingHorizontal: spacing.lg, marginBottom: spacing.xs },
+    addRow: { paddingHorizontal: spacing.lg, marginBottom: spacing.sm },
+    list: { paddingHorizontal: spacing.lg, paddingBottom: spacing.xl },
+
+    memberRow: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      gap: spacing.md,
+      paddingVertical: spacing.md,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    memberBody: { flex: 1 },
+    memberName: { color: colors.text, fontSize: 15, fontWeight: '600' },
+    memberMeta: {
+      fontFamily: colors.fonts.label,
+      fontSize: 10,
+      letterSpacing: 0.8,
+      textTransform: 'uppercase',
+      color: colors.textMuted,
+      marginTop: 3,
+    },
+    memberAllergy: { color: colors.warning, fontSize: 12, marginTop: spacing.xs },
+    remove: { color: colors.textMuted, fontSize: 15, paddingHorizontal: spacing.xs },
+    call: { fontSize: 17, paddingHorizontal: spacing.xs },
+
+    emergencyRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingVertical: spacing.sm,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    emergencyLabel: { color: colors.text, fontSize: 14 },
+    emergencyNumber: { fontFamily: colors.fonts.label, fontSize: 14, fontWeight: '700', color: colors.accent },
+
+    waRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingVertical: spacing.sm,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    waName: { color: colors.text, fontSize: 14 },
+    waAction: { fontFamily: colors.fonts.label, fontSize: 12, color: colors.ok, textTransform: 'uppercase', letterSpacing: 0.6 },
+    waNote: { fontSize: 11, color: colors.textMuted, marginTop: spacing.sm, lineHeight: 15 },
+    mapsLinkRow: { marginBottom: spacing.md },
+
+    routeLabel: {
+      fontFamily: colors.fonts.label,
+      fontSize: 13,
+      fontWeight: '700',
+      color: colors.accent,
+      letterSpacing: 0.6,
+      textTransform: 'uppercase',
+      marginBottom: spacing.md,
+    },
+  });
+}
