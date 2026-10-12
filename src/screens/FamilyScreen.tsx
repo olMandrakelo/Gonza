@@ -72,6 +72,14 @@ function Members() {
 
   async function pickFromContacts() {
     try {
+      // The picker returns only an id; the module then reads the contact itself, which needs the runtime
+      // READ_CONTACTS permission. Without it that read fails natively and the promise never settles
+      // (the screen hangs), so ask first and stop if it's refused.
+      const perm = await Contacts.requestPermissionsAsync();
+      if (!perm.granted) {
+        Alert.alert('Falta el permiso', 'Para elegir de tus contactos, permití el acceso a Contactos y probá de nuevo.');
+        return;
+      }
       const contact = await Contacts.presentContactPickerAsync();
       if (!contact) return;
       if (contact.name) setName(contact.name);
