@@ -7,8 +7,9 @@ import { Colors, mono, spacing } from '../ui/theme';
 import { useStorageList } from '../storage';
 import { Course, Material } from '../types';
 import { KNOTS } from '../knotsData';
+import { HAZARDS } from '../hazardsData';
 
-type Mode = 'notas' | 'nudos';
+type Mode = 'notas' | 'nudos' | 'riesgo';
 
 export default function MaterialScreen() {
   const { colors } = useTheme();
@@ -47,7 +48,9 @@ export default function MaterialScreen() {
               ? loading
                 ? 'Cargando…'
                 : `Sección 04 · ${items.length} guardados`
-              : `Sección 04 · ${KNOTS.length} nudos`
+              : mode === 'nudos'
+              ? `Sección 04 · ${KNOTS.length} nudos`
+              : `Sección 04 · ${HAZARDS.length} guías`
           }
           title="Material"
           right={
@@ -60,10 +63,13 @@ export default function MaterialScreen() {
         <View style={styles.modeRow}>
           <Chip label="Mis notas" selected={mode === 'notas'} onPress={() => setMode('notas')} />
           <Chip label="Guía de nudos" selected={mode === 'nudos'} onPress={() => setMode('nudos')} />
+          <Chip label="Guías de riesgo" selected={mode === 'riesgo'} onPress={() => setMode('riesgo')} />
         </View>
 
         {mode === 'nudos' ? (
           <Knots />
+        ) : mode === 'riesgo' ? (
+          <Hazards />
         ) : (
           <>
             {showForm && (
@@ -155,6 +161,56 @@ function Knots() {
   );
 }
 
+function Hazards() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const [openId, setOpenId] = useState<string | null>(null);
+
+  return (
+    <ScrollView contentContainerStyle={styles.list}>
+      {HAZARDS.map((hazard) => {
+        const open = openId === hazard.id;
+        return (
+          <Pressable key={hazard.id} style={styles.knotCard} onPress={() => setOpenId(open ? null : hazard.id)}>
+            <View style={styles.knotHeader}>
+              <View style={styles.hazardTitleRow}>
+                <Text style={styles.hazardIcon}>{hazard.icon}</Text>
+                <View>
+                  <Text style={styles.knotName}>{hazard.title}</Text>
+                  <Text style={styles.hazardTag}>{hazard.tag}</Text>
+                </View>
+              </View>
+              <Text style={styles.knotToggle}>{open ? '−' : '+'}</Text>
+            </View>
+            {open && (
+              <View style={styles.knotBody}>
+                <Text style={styles.hazardSection}>Antes</Text>
+                {hazard.antes.map((step, i) => (
+                  <Text key={i} style={styles.knotStep}>
+                    · {step}
+                  </Text>
+                ))}
+                <Text style={styles.hazardSection}>Durante</Text>
+                {hazard.durante.map((step, i) => (
+                  <Text key={i} style={styles.knotStep}>
+                    · {step}
+                  </Text>
+                ))}
+                <Text style={styles.hazardSection}>Después</Text>
+                {hazard.despues.map((step, i) => (
+                  <Text key={i} style={styles.knotStep}>
+                    · {step}
+                  </Text>
+                ))}
+              </View>
+            )}
+          </Pressable>
+        );
+      })}
+    </ScrollView>
+  );
+}
+
 function makeStyles(colors: Colors) {
   return StyleSheet.create({
     safe: { flex: 1, backgroundColor: colors.background },
@@ -177,6 +233,18 @@ function makeStyles(colors: Colors) {
     knotImage: { width: '100%', height: 160, marginBottom: spacing.md },
     knotUse: { color: colors.text, fontSize: 13, lineHeight: 18, opacity: 0.85, marginBottom: spacing.sm },
     knotStep: { color: colors.text, fontSize: 13, lineHeight: 19, marginBottom: spacing.xs },
+    hazardTitleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, flexShrink: 1 },
+    hazardIcon: { fontSize: 22 },
+    hazardTag: { fontSize: 12, color: colors.textMuted, marginTop: 2 },
+    hazardSection: {
+      fontFamily: mono,
+      fontSize: 11,
+      letterSpacing: 0.8,
+      textTransform: 'uppercase',
+      color: colors.accent,
+      marginTop: spacing.sm,
+      marginBottom: spacing.xs,
+    },
     row: {
       flexDirection: 'row',
       alignItems: 'flex-start',

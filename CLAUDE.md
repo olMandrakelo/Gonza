@@ -69,6 +69,13 @@ There is no test suite yet.
   `src/assets/knots/`) for Material's "Guía de nudos" mode. Not user data, so it isn't read through `useStorageList`
   like the rest of Material — it's a plain constant rendered read-only. The diagrams are plain PNGs (RN's own
   `Image`, not SVG or a native renderer), so this ships as a normal OTA update like everything else in `src/`.
+- `src/hazardsData.ts` — `HAZARDS`, static antes/durante/después guides (crecida del Paraná, tormentas, corte de
+  luz, ola de calor) for Material's "Guías de riesgo" mode. Same static-constant pattern as `knotsData.ts`.
+  Transcribed from a reference the user shared that also had a live Paraná river-level gauge — that part was left
+  out since it needs a real hydrometric data feed, which doesn't fit this app's local-first, no-network design.
+- `src/emergencyNumbers.ts` — `EMERGENCY_NUMBERS`, static tap-to-call reference numbers (911, SAME, Bomberos,
+  Defensa Civil Rosario) shown at the top of `FamilyScreen`'s "Plan de emergencia" mode. Each entry has a `dial`
+  (digits-only, for `Linking.openURL('tel:'+dial)`) separate from its `display` string.
 - `src/screens/`
   - `ChecklistScreen.tsx` — gear/supplies checklist. Two levels: a `resumen` view (readiness percentage, segmented
     `Meter`, and one `Bar` per row) drills into a single group's item list, or into all items. The resumen groups
@@ -81,14 +88,15 @@ There is no test suite yet.
     member rows. The emoji field offers `BAG_EMOJI_PRESETS` (a tap-to-pick row) plus free text for anything not
     covered — plain unicode characters, so no icon font/SVG dependency.
   - `CoursesScreen.tsx` — courses tracker with status (`pendiente` / `en_curso` / `hecho`), cycled by tapping a row.
-  - `MaterialScreen.tsx` — two modes via Chip toggle: `Mis notas` (study notes/links, optionally linked to a
-    course — the original CRUD list) and `Guía de nudos`, a read-only, tap-to-expand list over the static `KNOTS`
-    from `src/knotsData.ts`.
+  - `MaterialScreen.tsx` — three modes via Chip toggle: `Mis notas` (study notes/links, optionally linked to a
+    course — the original CRUD list), `Guía de nudos`, and `Guías de riesgo` — the latter two are read-only,
+    tap-to-expand lists over the static `KNOTS` (`src/knotsData.ts`) and `HAZARDS` (`src/hazardsData.ts`).
   - `QuizScreen.tsx` — question bank (CRUD) plus a "Simulacro" mode that runs a shuffled quiz over all or
     course-filtered questions and scores it.
   - `FamilyScreen.tsx` — two modes: `Integrantes` (CRUD list of `FamilyMember`, one per person: contacts, blood
-    type, allergies) and `Plan de emergencia` (the single `FamilyPlan` — address plus routes A–D). The plan is
-    edited as local draft state and written in one `save()` call from an explicit button, not per-keystroke.
+    type, allergies — a phone1 shows a tap-to-call 📞) and `Plan de emergencia` (the static `EMERGENCY_NUMBERS`
+    tap-to-call list, then the single `FamilyPlan` — address plus routes A–D). The plan is edited as local draft
+    state and written in one `save()` call from an explicit button, not per-keystroke.
   - `SettingsScreen.tsx` — theme mode and accent color picker, backed by `useTheme()`.
 
 Screens follow the same pattern for theme-aware styles: read `colors` from `useTheme()`, then

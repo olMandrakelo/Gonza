@@ -1,11 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, Text, View, Pressable } from 'react-native';
+import { Linking, ScrollView, StyleSheet, Text, View, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button, Card, Chip, EmptyState, Field, Screen, ScreenHeader } from '../ui/components';
 import { useTheme } from '../ui/ThemeContext';
 import { Colors, mono, spacing } from '../ui/theme';
 import { useStorageList, useStorageObject } from '../storage';
 import { EvacuationRoute, FamilyMember, FamilyPlan, emptyFamilyPlan } from '../types';
+import { EMERGENCY_NUMBERS } from '../emergencyNumbers';
 
 type Mode = 'integrantes' | 'plan';
 
@@ -126,6 +127,11 @@ function Members() {
               </Text>
               {m.allergies ? <Text style={styles.memberAllergy}>Alergias: {m.allergies}</Text> : null}
             </View>
+            {m.phone1 ? (
+              <Pressable hitSlop={12} onPress={() => Linking.openURL(`tel:${m.phone1}`)}>
+                <Text style={styles.call}>📞</Text>
+              </Pressable>
+            ) : null}
             <Pressable hitSlop={12} onPress={() => removeItem(m.id)}>
               <Text style={styles.remove}>✕</Text>
             </Pressable>
@@ -165,6 +171,16 @@ function Plan() {
 
   return (
     <ScrollView contentContainerStyle={styles.list}>
+      <Card>
+        <Text style={styles.routeLabel}>Números de emergencia</Text>
+        {EMERGENCY_NUMBERS.map((n) => (
+          <Pressable key={n.label} style={styles.emergencyRow} onPress={() => Linking.openURL(`tel:${n.dial}`)}>
+            <Text style={styles.emergencyLabel}>{n.label}</Text>
+            <Text style={styles.emergencyNumber}>{n.display}</Text>
+          </Pressable>
+        ))}
+      </Card>
+
       <Card>
         <Field
           label="Dirección"
@@ -230,6 +246,18 @@ function makeStyles(colors: Colors) {
     },
     memberAllergy: { color: colors.warning, fontSize: 12, marginTop: spacing.xs },
     remove: { color: colors.textMuted, fontSize: 15, paddingHorizontal: spacing.xs },
+    call: { fontSize: 17, paddingHorizontal: spacing.xs },
+
+    emergencyRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingVertical: spacing.sm,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    emergencyLabel: { color: colors.text, fontSize: 14 },
+    emergencyNumber: { fontFamily: mono, fontSize: 14, fontWeight: '700', color: colors.accent },
 
     routeLabel: {
       fontFamily: mono,
