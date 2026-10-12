@@ -20,8 +20,9 @@ There is no test suite yet.
 ## Architecture
 
 - `App.tsx` — root component; before rendering anything it awaits `seedGearIfNeeded()` (see below), then wraps
-  everything in `ThemeProvider` and sets up `NavigationContainer` with a bottom tab navigator (6 tabs, one per
-  screen). Nav theme, tab bar colors, and the status bar style all read from `useTheme()` so they follow the active
+  everything in `ThemeProvider` and sets up `NavigationContainer` with a bottom tab navigator (6 visible tabs: Inicio,
+  Equipo, Cursos, Práctica, Material, Familia — Ajustes is still a registered screen but hidden from the bar with
+  `tabBarItemStyle: { display: 'none' }`, reached from the ⚙ in Inicio's header; Inicio is the `initialRouteName`). Nav theme, tab bar colors, and the status bar style all read from `useTheme()` so they follow the active
   theme live; the tab bar height/padding add `useSafeAreaInsets().bottom` so it doesn't sit under Android's
   gesture/button nav.
 - `src/types.ts` — shared domain types: `GearItem`, `Course`, `Material`, `Question`, `FamilyMember`, `FamilyPlan`
@@ -30,8 +31,13 @@ There is no test suite yet.
 - `src/storage.ts` — `useStorageList<T>(key)`, a generic hook giving `{ items, loading, addItem, updateItem, removeItem }`
   backed by AsyncStorage, JSON-serialized under one storage key per entity list. All screens use this instead of a
   custom backend/database — add new entity types by defining a type in `types.ts` and calling the hook with a new key.
+  Both hooks return a `reload()` — tabs stay mounted, so a hook only reads storage once at startup; a screen that
+  shows data edited elsewhere (Inicio) calls `reload()` from `useFocusEffect`.
   `useStorageObject<T>(key, empty)` is the same idea for a single record instead of a list (used for `FamilyPlan`,
   which has one fixed shape rather than add/remove entries).
+- `src/progress.ts` — pure progress maths shared by Equipo and Inicio: `readiness`, `byCategory`, `byBag` (with the
+  synthetic `UNASSIGNED` "Sin mochila" row) and `topPending` (water and health first). Keep one source so both
+  screens always show the same numbers.
 - `src/seedData.ts` — `SEED_BAGS` (the 4 backpacks from the "Día Cero" 72h guide: líder, apoyo, niñ@ 1, niñ@ 2) and
   `SEED_ITEMS_BY_BAG` (one items array per bag, transcribed straight from the guide rather than consolidated, so the
   suggested checklist loads split by mochila instead of as one flat list). `buildSeed()` assigns fresh ids to both
@@ -77,6 +83,10 @@ There is no test suite yet.
   Defensa Civil Rosario) shown at the top of `FamilyScreen`'s "Plan de emergencia" mode. Each entry has a `dial`
   (digits-only, for `Linking.openURL('tel:'+dial)`) separate from its `display` string.
 - `src/screens/`
+  - `HomeScreen.tsx` — Inicio: readiness % + `Meter`, 911/SAME tap-to-call and a "Plan de salida" shortcut, per-mochila
+    bars, the 5 most important pending items, short notices for gaps in the family plan, and a courses line. Reads
+    everything through the storage hooks and `reload()`s on focus. Navigates with params: `Equipo` `{ bagId }` opens
+    that mochila, `Familia` `{ mode: 'plan' }` opens the plan; both screens consume the param on focus and clear it.
   - `ChecklistScreen.tsx` — gear/supplies checklist. Two levels: a `resumen` view (readiness percentage, segmented
     `Meter`, and one `Bar` per row) drills into a single group's item list, or into all items. The resumen groups
     either by `GearCategory` or by `Bag` (a "Por categoría" / "Por mochila" toggle) — a `GearItem.bagId` is which

@@ -9,20 +9,15 @@ export function useStorageList<T extends { id: string }>(storageKey: string) {
   const [items, setItems] = useState<T[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    let cancelled = false;
-    AsyncStorage.getItem(storageKey)
-      .then((raw) => {
-        if (cancelled) return;
-        setItems(raw ? (JSON.parse(raw) as T[]) : []);
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
+  const reload = useCallback(() => {
+    return AsyncStorage.getItem(storageKey)
+      .then((raw) => setItems(raw ? (JSON.parse(raw) as T[]) : []))
+      .finally(() => setLoading(false));
   }, [storageKey]);
+
+  useEffect(() => {
+    reload();
+  }, [reload]);
 
   const persist = useCallback(
     (next: T[]) => {
@@ -57,7 +52,7 @@ export function useStorageList<T extends { id: string }>(storageKey: string) {
 
   const clearAll = useCallback(() => persist([]), [persist]);
 
-  return { items, loading, addItem, addMany, updateItem, removeItem, clearAll };
+  return { items, loading, addItem, addMany, updateItem, removeItem, clearAll, reload };
 }
 
 /** Like useStorageList, but for a single record (e.g. a family plan) instead of a list. */
@@ -65,21 +60,16 @@ export function useStorageObject<T>(storageKey: string, empty: () => T) {
   const [value, setValue] = useState<T>(empty);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    let cancelled = false;
-    AsyncStorage.getItem(storageKey)
-      .then((raw) => {
-        if (cancelled) return;
-        setValue(raw ? (JSON.parse(raw) as T) : empty());
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
+  const reload = useCallback(() => {
+    return AsyncStorage.getItem(storageKey)
+      .then((raw) => setValue(raw ? (JSON.parse(raw) as T) : empty()))
+      .finally(() => setLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storageKey]);
+
+  useEffect(() => {
+    reload();
+  }, [reload]);
 
   const save = useCallback(
     (next: T) => {
@@ -89,5 +79,5 @@ export function useStorageObject<T>(storageKey: string, empty: () => T) {
     [storageKey]
   );
 
-  return { value, loading, save };
+  return { value, loading, save, reload };
 }

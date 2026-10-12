@@ -1,7 +1,7 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { BackHandler, FlatList, Platform, Pressable, ScrollView, StyleSheet, Text, ToastAndroid, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
 import { Bar, Button, Card, Chip, EmptyState, Field, Label, Meter, Screen, ScreenHeader, confirmClear } from '../ui/components';
 import { ItemPickerModal } from '../ui/ItemPickerModal';
 import { useTheme } from '../ui/ThemeContext';
@@ -9,10 +9,8 @@ import { Colors, progressColor, spacing } from '../ui/theme';
 import { useStorageList } from '../storage';
 import { Bag, GEAR_CATEGORIES, GearCategory, GearItem } from '../types';
 import { buildSeed } from '../seedData';
+import { UNASSIGNED, byBag, byCategory } from '../progress';
 import { CATALOG_ITEMS } from '../catalog';
-
-/** Sentinel bag id for items with no bag assigned, so they still show up in "por mochila". */
-const UNASSIGNED = '__sin_mochila__';
 
 /** Tap-to-pick presets offered alongside the free-text emoji field when naming a mochila. */
 const BAG_EMOJI_PRESETS = [
@@ -42,8 +40,22 @@ export default function ChecklistScreen() {
     clearAll: clearBags,
   } = useStorageList<Bag>('gonza:bags');
 
+  const route = useRoute<any>();
+  const navigation = useNavigation<any>();
   const [view, setView] = useState<ViewMode>({ kind: 'resumen' });
   const [groupMode, setGroupMode] = useState<GroupMode>('categoria');
+
+  // Inicio opens a specific mochila by navigating here with { bagId }; consume the param so
+  // coming back to this tab later doesn't re-trigger it.
+  const bagIdParam: string | undefined = route.params?.bagId;
+  useFocusEffect(
+    useCallback(() => {
+      if (!bagIdParam) return;
+      setGroupMode('mochila');
+      setView({ kind: 'bag', value: bagIdParam });
+      navigation.setParams({ bagId: undefined });
+    }, [bagIdParam, navigation])
+  );
   const [showForm, setShowForm] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [name, setName] = useState('');
@@ -59,32 +71,8 @@ export default function ChecklistScreen() {
   const have = items.filter((it) => it.have).length;
   const ratio = items.length ? have / items.length : 0;
 
-  const byCategory = useMemo(
-    () =>
-      GEAR_CATEGORIES.map((c) => {
-        const list = items.filter((it) => it.category === c);
-        return { key: c, label: c, total: list.length, done: list.filter((it) => it.have).length };
-      }).filter((row) => row.total > 0),
-    [items]
-  );
-
-  const byBag = useMemo(() => {
-    const bagIds = new Set(bags.map((b) => b.id));
-    const rows = bags.map((b) => {
-      const list = items.filter((it) => it.bagId === b.id);
-      return { key: b.id, label: b.emoji ? `${b.emoji} ${b.name}` : b.name, total: list.length, done: list.filter((it) => it.have).length };
-    });
-    const unassigned = items.filter((it) => !it.bagId || !bagIds.has(it.bagId));
-    if (unassigned.length > 0) {
-      rows.push({
-        key: UNASSIGNED,
-        label: 'Sin mochila',
-        total: unassigned.length,
-        done: unassigned.filter((it) => it.have).length,
-      });
-    }
-    return rows;
-  }, [items, bags]);
+  const categoryRows = useMemo(() => byCategory(items), [items]);
+  const bagRows = useMemo(() => byBag(items, bags), [items, bags]);
 
   const listed = useMemo(() => {
     if (view.kind === 'todos') return items;
@@ -285,7 +273,7 @@ export default function ChecklistScreen() {
               </View>
             ) : groupMode === 'categoria' ? (
               <View style={styles.cats}>
-                {byCategory.map((row) => {
+                {categoryRows.map((row) => {
                   const r = row.done / row.total;
                   return (
                     <Pressable key={row.key} onPress={() => setView({ kind: 'category', value: row.key })} style={styles.catRow}>
@@ -305,7 +293,7 @@ export default function ChecklistScreen() {
               </View>
             ) : (
               <View style={styles.cats}>
-                {byBag.map((row) => {
+                {bagRows.map((row) => {
                   const r = row.total > 0 ? row.done / row.total : 0;
                   return (
                     <Pressable key={row.key} onPress={() => setView({ kind: 'bag', value: row.key })} style={styles.catRow}>

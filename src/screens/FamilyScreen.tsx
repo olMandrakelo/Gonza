@@ -1,6 +1,7 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Linking, ScrollView, StyleSheet, Text, View, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
 import { Button, Card, Chip, EmptyState, Field, Screen, ScreenHeader, confirmClear } from '../ui/components';
 import { useTheme } from '../ui/ThemeContext';
 import { Colors, spacing } from '../ui/theme';
@@ -13,7 +14,19 @@ type Mode = 'integrantes' | 'plan';
 export default function FamilyScreen() {
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
+  const route = useRoute<any>();
+  const navigation = useNavigation<any>();
   const [mode, setMode] = useState<Mode>('integrantes');
+
+  // Inicio's "Plan de salida" shortcut navigates here with { mode: 'plan' }.
+  const modeParam: Mode | undefined = route.params?.mode;
+  useFocusEffect(
+    useCallback(() => {
+      if (!modeParam) return;
+      setMode(modeParam);
+      navigation.setParams({ mode: undefined });
+    }, [modeParam, navigation])
+  );
   const { items: members } = useStorageList<FamilyMember>('gonza:family');
 
   return (

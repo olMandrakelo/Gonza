@@ -6,6 +6,7 @@ import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-cont
 import ChecklistScreen from './src/screens/ChecklistScreen';
 import CoursesScreen from './src/screens/CoursesScreen';
 import FamilyScreen from './src/screens/FamilyScreen';
+import HomeScreen from './src/screens/HomeScreen';
 import MaterialScreen from './src/screens/MaterialScreen';
 import QuizScreen from './src/screens/QuizScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
@@ -35,6 +36,7 @@ function Navigation() {
     <>
       <NavigationContainer theme={navTheme}>
         <Tab.Navigator
+          initialRouteName="Inicio"
           screenOptions={({ route }) => ({
             headerShown: false,
             tabBarActiveTintColor: colors.accent,
@@ -58,12 +60,13 @@ function Navigation() {
             },
           })}
         >
+          <Tab.Screen name="Inicio" component={HomeScreen} />
           <Tab.Screen name="Equipo" component={ChecklistScreen} />
           <Tab.Screen name="Cursos" component={CoursesScreen} />
           <Tab.Screen name="Práctica" component={QuizScreen} />
           <Tab.Screen name="Material" component={MaterialScreen} />
           <Tab.Screen name="Familia" component={FamilyScreen} />
-          <Tab.Screen name="Ajustes" component={SettingsScreen} />
+          <Tab.Screen name="Ajustes" component={SettingsScreen} options={{ tabBarItemStyle: { display: 'none' } }} />
         </Tab.Navigator>
       </NavigationContainer>
       <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />

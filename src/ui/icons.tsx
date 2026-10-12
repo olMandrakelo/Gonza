@@ -139,7 +139,20 @@ export function FamilyIcon({ color, bg }: IconProps) {
   );
 }
 
+/** House — the Inicio tab. */
+export function HomeIcon({ color }: IconProps) {
+  return (
+    <Box>
+      <View style={{ width: 11, height: 11, borderWidth: STROKE, borderColor: color, borderBottomWidth: 0, borderRightWidth: 0, transform: [{ rotate: '45deg' }], marginBottom: -4 }} />
+      <View style={{ width: 14, height: 9, borderWidth: STROKE, borderTopWidth: 0, borderColor: color, borderBottomLeftRadius: 2, borderBottomRightRadius: 2, alignItems: 'center', justifyContent: 'flex-end' }}>
+        <View style={{ width: 4, height: 5, borderWidth: STROKE, borderBottomWidth: 0, borderColor: color }} />
+      </View>
+    </Box>
+  );
+}
+
 export const TAB_ICONS: Record<string, React.ComponentType<IconProps>> = {
+  Inicio: HomeIcon,
   Equipo: BackpackIcon,
   Cursos: BookIcon,
   Práctica: TargetIcon,
