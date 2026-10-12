@@ -142,13 +142,26 @@ function Members() {
   );
 }
 
+/** A pasted Google Maps share link if there is one, otherwise a Maps search built from the
+ * free-text address/meeting point — null only when neither is available. */
+function mapsUrlFor(link: string, fallbackQuery: string): string | null {
+  const trimmed = link.trim();
+  if (trimmed) return trimmed;
+  const q = fallbackQuery.trim();
+  return q ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}` : null;
+}
+
 function buildPlanMessage(plan: FamilyPlan): string {
   const lines = ['📋 Plan de emergencia familiar', ''];
   lines.push(`🏠 Dirección: ${plan.address.trim() || '(sin cargar)'}`);
+  const homeMapsUrl = mapsUrlFor(plan.mapsLink ?? '', plan.address);
+  if (homeMapsUrl) lines.push(`🗺️ ${homeMapsUrl}`);
   const routes = plan.routes.filter((r) => r.meetingPoint.trim() || r.plan.trim());
   for (const r of routes) {
     lines.push('', `Ruta ${r.label}`);
     if (r.meetingPoint.trim()) lines.push(`📍 Punto de encuentro: ${r.meetingPoint.trim()}`);
+    const routeMapsUrl = mapsUrlFor(r.mapsLink ?? '', r.meetingPoint);
+    if (routeMapsUrl) lines.push(`🗺️ ${routeMapsUrl}`);
     if (r.plan.trim()) lines.push(r.plan.trim());
   }
   return lines.join('\n');
@@ -209,6 +222,20 @@ function Plan() {
           }}
           placeholder="Domicilio familiar"
         />
+        <Field
+          label="Link de Google Maps (opcional)"
+          value={draft.mapsLink ?? ''}
+          onChangeText={(v) => {
+            setSaved(false);
+            setDraft((d) => ({ ...d, mapsLink: v }));
+          }}
+          placeholder="Pegá el link que te da Maps al compartir la ubicación"
+        />
+        {mapsUrlFor(draft.mapsLink ?? '', draft.address) && (
+          <Pressable onPress={() => Linking.openURL(mapsUrlFor(draft.mapsLink ?? '', draft.address) as string)}>
+            <Text style={styles.waAction}>Abrir en Maps ›</Text>
+          </Pressable>
+        )}
       </Card>
 
       {draft.routes.map((route, i) => (
@@ -220,6 +247,20 @@ function Plan() {
             onChangeText={(v) => updateRoute(i, { meetingPoint: v })}
             placeholder="Ej: Plaza frente a la escuela"
           />
+          <Field
+            label="Link de Google Maps (opcional)"
+            value={route.mapsLink ?? ''}
+            onChangeText={(v) => updateRoute(i, { mapsLink: v })}
+            placeholder="Pegá el link que te da Maps al compartir la ubicación"
+          />
+          {mapsUrlFor(route.mapsLink ?? '', route.meetingPoint) && (
+            <Pressable
+              style={styles.mapsLinkRow}
+              onPress={() => Linking.openURL(mapsUrlFor(route.mapsLink ?? '', route.meetingPoint) as string)}
+            >
+              <Text style={styles.waAction}>Abrir en Maps ›</Text>
+            </Pressable>
+          )}
           <Field
             label="Plan de evacuación"
             value={route.plan}
@@ -310,6 +351,7 @@ function makeStyles(colors: Colors) {
     waName: { color: colors.text, fontSize: 14 },
     waAction: { fontFamily: mono, fontSize: 12, color: colors.ok, textTransform: 'uppercase', letterSpacing: 0.6 },
     waNote: { fontSize: 11, color: colors.textMuted, marginTop: spacing.sm, lineHeight: 15 },
+    mapsLinkRow: { marginBottom: spacing.md },
 
     routeLabel: {
       fontFamily: mono,

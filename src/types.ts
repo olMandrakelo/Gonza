@@ -89,10 +89,16 @@ export interface EvacuationRoute {
   label: RouteLabel;
   meetingPoint: string;
   plan: string;
+  /** A Google Maps share link for the meeting point, pasted by the user. Optional: falls back
+   * to a Maps search built from meetingPoint when absent (see mapsUrlFor in FamilyScreen). */
+  mapsLink?: string;
 }
 
 export interface FamilyPlan {
   address: string;
+  /** A Google Maps share link for the home address — same optional/fallback pattern as
+   * EvacuationRoute.mapsLink. */
+  mapsLink?: string;
   routes: EvacuationRoute[];
 }
 

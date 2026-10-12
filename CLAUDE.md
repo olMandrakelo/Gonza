@@ -102,6 +102,10 @@ There is no test suite yet.
     user still taps send themselves. This is deliberately not real sync: the app stays local-first/no-backend, so
     "share with the family" means "hand them a prefilled message," not a shared live document. `waLink()` strips
     non-digits from the stored phone string; a number saved without its country code may open the wrong chat.
+    The address and each route also take an optional `mapsLink` (a pasted Google Maps share URL) — `mapsUrlFor()`
+    opens that link when present, otherwise builds a `google.com/maps/search` URL from the free-text
+    address/meeting point, so "Abrir en Maps" and the links included in `buildPlanMessage()` work either way. No
+    native maps SDK: same plain-`Linking`-URL approach as the `tel:`/`wa.me` links on this screen, so it stays OTA.
   - `SettingsScreen.tsx` — theme mode and accent color picker, backed by `useTheme()`.
 
 Screens follow the same pattern for theme-aware styles: read `colors` from `useTheme()`, then
