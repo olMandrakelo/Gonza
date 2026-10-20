@@ -46,7 +46,10 @@ export function byBag(items: GearItem[], bags: Bag[]): ProgressRow[] {
   return rows;
 }
 
-const PENDING_PRIORITY: GearCategory[] = ['Agua', 'Salud', 'Energía', 'Alimentos', 'Comunicación', 'Herramientas', 'Documentos', 'Otros'];
+const PENDING_PRIORITY: GearCategory[] = [
+  'Agua', 'Salud', 'Fuego', 'Refugio y abrigo', 'Energía', 'Alimentos', 'Cocina', 'Auto', 'Navegación y señales',
+  'Comunicación', 'Herramientas', 'Documentos', 'Otros',
+];
 
 /** The most important items still missing: water and health first, the rest in a fixed order. */
 export function topPending(items: GearItem[], n: number): GearItem[] {

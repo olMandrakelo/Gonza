@@ -463,6 +463,7 @@ export default function ChecklistScreen() {
         onSelect={(item) => {
           setName(item.name);
           setCategory(item.category);
+          if (item.quantity) setQuantity(item.quantity);
           setPickerOpen(false);
         }}
       />

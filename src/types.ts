@@ -1,20 +1,30 @@
 export type GearCategory =
   | 'Agua'
   | 'Alimentos'
+  | 'Fuego'
+  | 'Cocina'
   | 'Salud'
   | 'Herramientas'
+  | 'Refugio y abrigo'
+  | 'Navegación y señales'
   | 'Comunicación'
   | 'Energía'
+  | 'Auto'
   | 'Documentos'
   | 'Otros';
 
 export const GEAR_CATEGORIES: GearCategory[] = [
   'Agua',
   'Alimentos',
+  'Fuego',
+  'Cocina',
   'Salud',
   'Herramientas',
+  'Refugio y abrigo',
+  'Navegación y señales',
   'Comunicación',
   'Energía',
+  'Auto',
   'Documentos',
   'Otros',
 ];

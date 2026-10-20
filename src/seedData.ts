@@ -1,10 +1,12 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { generateId } from './storage';
+import { CATALOG_ITEMS } from './catalog';
 import { Bag, GearItem } from './types';
 
 const SEEDED_FLAG = 'gonza:seeded-checklist-dia-cero';
 const GEAR_KEY = 'gonza:gear';
 const BAGS_KEY = 'gonza:bags';
+const CATEGORIES_V2_FLAG = 'gonza:categories-v2';
 
 type SeedGearItem = Omit<GearItem, 'id' | 'have' | 'bagId'>;
 
@@ -29,12 +31,12 @@ export const SEED_ITEMS_BY_BAG: SeedGearItem[][] = [
     { name: 'Filtro portátil de agua', category: 'Agua' },
     { name: 'Pastillas potabilizadoras (blíster)', category: 'Agua' },
     { name: 'Alimentación de alta densidad (72h)', category: 'Alimentos', quantity: 'Liofilizados, atún, barritas, chocolate' },
-    { name: 'Kit de cocina ligero', category: 'Alimentos', quantity: 'Cazo, cubiertos, hornillo casero' },
-    { name: 'Mudas de ropa seca', category: 'Otros', quantity: 'Calcetines, camiseta, campera, gorro, buff, guantes' },
-    { name: 'Poncho impermeable multi-uso', category: 'Otros' },
-    { name: 'Saco de dormir de emergencia y manta térmica', category: 'Otros' },
+    { name: 'Kit de cocina ligero', category: 'Cocina', quantity: 'Cazo, cubiertos, hornillo casero' },
+    { name: 'Mudas de ropa seca', category: 'Refugio y abrigo', quantity: 'Calcetines, camiseta, campera, gorro, buff, guantes' },
+    { name: 'Poncho impermeable multi-uso', category: 'Refugio y abrigo' },
+    { name: 'Saco de dormir de emergencia y manta térmica', category: 'Refugio y abrigo' },
     { name: '2 bolsas de basura industriales grandes', category: 'Otros' },
-    { name: 'Encendedor, ferrocerio y material de ignición', category: 'Herramientas' },
+    { name: 'Encendedor, ferrocerio y material de ignición', category: 'Fuego' },
     { name: 'Walkie-talkie PMR446', category: 'Comunicación' },
     { name: 'Linterna frontal y de mano', category: 'Herramientas' },
     { name: 'Powerbank, cables y pilas de repuesto', category: 'Energía' },
@@ -53,12 +55,12 @@ export const SEED_ITEMS_BY_BAG: SeedGearItem[][] = [
     { name: 'Soft flasks 0,5L (vacías)', category: 'Agua' },
     { name: 'Pastillas potabilizadoras (blíster)', category: 'Agua' },
     { name: 'Alimentación de alta densidad (72h)', category: 'Alimentos', quantity: 'Liofilizados, atún, barritas, chocolate' },
-    { name: 'Kit de cocina ligero', category: 'Alimentos', quantity: 'Cazo, cubiertos, sistema de calentamiento' },
-    { name: 'Mudas de ropa seca', category: 'Otros', quantity: 'Calcetines, camiseta, campera, gorro, buff, guantes' },
-    { name: 'Poncho impermeable multi-uso', category: 'Otros' },
-    { name: 'Saco de dormir de emergencia y manta térmica', category: 'Otros' },
+    { name: 'Kit de cocina ligero', category: 'Cocina', quantity: 'Cazo, cubiertos, sistema de calentamiento' },
+    { name: 'Mudas de ropa seca', category: 'Refugio y abrigo', quantity: 'Calcetines, camiseta, campera, gorro, buff, guantes' },
+    { name: 'Poncho impermeable multi-uso', category: 'Refugio y abrigo' },
+    { name: 'Saco de dormir de emergencia y manta térmica', category: 'Refugio y abrigo' },
     { name: '2 bolsas de basura industriales grandes', category: 'Otros' },
-    { name: 'Encendedor y material de ignición', category: 'Herramientas' },
+    { name: 'Encendedor y material de ignición', category: 'Fuego' },
     { name: 'Walkie-talkie PMR446', category: 'Comunicación' },
     { name: 'Linterna frontal y de mano', category: 'Herramientas' },
     { name: 'Powerbank, cables y pilas de repuesto', category: 'Energía' },
@@ -74,32 +76,32 @@ export const SEED_ITEMS_BY_BAG: SeedGearItem[][] = [
     { name: 'Agua fraccionada (2L)', category: 'Agua' },
     { name: 'Alimentación de confort emocional', category: 'Alimentos', quantity: 'Barritas, chocolate, galletas' },
     { name: 'Kit de cocina individual', category: 'Alimentos', quantity: 'Cazo y cubiertos livianos' },
-    { name: 'Mudas de ropa seca', category: 'Otros', quantity: 'Calcetines, camiseta, campera, gorro, buff, guantes' },
-    { name: 'Chubasquero infantil de alta visibilidad', category: 'Otros' },
-    { name: 'Manta de emergencia', category: 'Otros' },
+    { name: 'Mudas de ropa seca', category: 'Refugio y abrigo', quantity: 'Calcetines, camiseta, campera, gorro, buff, guantes' },
+    { name: 'Chubasquero infantil de alta visibilidad', category: 'Refugio y abrigo' },
+    { name: 'Manta de emergencia', category: 'Refugio y abrigo' },
     { name: '2 bolsas de basura medianas', category: 'Otros' },
     { name: 'Walkie-talkie PMR446 (canal bloqueado)', category: 'Comunicación' },
     { name: 'Iluminación autónoma infantil', category: 'Herramientas' },
     { name: 'Higiene y protección adaptada', category: 'Salud', quantity: 'Cepillo, toallitas, papel higiénico, mascarilla infantil' },
     { name: 'Ficha identificativa de contingencia', category: 'Documentos', quantity: 'Cargala en la sección Familia' },
     { name: 'Entretenimiento y distracción', category: 'Otros', quantity: 'Libro, libreta, lápices, un juguete' },
-    { name: 'Silbato de emergencia acústico', category: 'Herramientas' },
+    { name: 'Silbato de emergencia acústico', category: 'Navegación y señales' },
   ],
   // Mochila niñ@ 2 — autonomía adaptada
   [
     { name: 'Agua fraccionada (1L)', category: 'Agua' },
     { name: 'Alimentación de confort emocional', category: 'Alimentos', quantity: 'Barritas, chocolate, galletas' },
     { name: 'Kit de cocina individual', category: 'Alimentos', quantity: 'Cazo y cubiertos livianos' },
-    { name: 'Mudas de ropa seca', category: 'Otros', quantity: 'Calcetines, camiseta, campera, gorro, buff, guantes' },
-    { name: 'Chubasquero infantil de alta visibilidad', category: 'Otros' },
-    { name: 'Manta de emergencia', category: 'Otros' },
+    { name: 'Mudas de ropa seca', category: 'Refugio y abrigo', quantity: 'Calcetines, camiseta, campera, gorro, buff, guantes' },
+    { name: 'Chubasquero infantil de alta visibilidad', category: 'Refugio y abrigo' },
+    { name: 'Manta de emergencia', category: 'Refugio y abrigo' },
     { name: '2 bolsas de basura medianas', category: 'Otros' },
     { name: 'Walkie-talkie PMR446 (canal bloqueado)', category: 'Comunicación' },
     { name: 'Iluminación autónoma infantil', category: 'Herramientas' },
     { name: 'Higiene y protección adaptada', category: 'Salud', quantity: 'Pasta dental, toallitas, higiene íntima' },
     { name: 'Ficha identificativa de contingencia', category: 'Documentos', quantity: 'Cargala en la sección Familia' },
     { name: 'Entretenimiento y distracción', category: 'Otros', quantity: 'Libro, libreta, lápices, un juguete' },
-    { name: 'Silbato de emergencia acústico', category: 'Herramientas' },
+    { name: 'Silbato de emergencia acústico', category: 'Navegación y señales' },
   ],
 ];
 
@@ -143,5 +145,29 @@ export async function seedGearIfNeeded(): Promise<void> {
     // Never block app startup on a seeding failure — the "Cargar checklist sugerido" button
     // in the empty Equipo view is the fallback if this silently didn't run.
     console.error('seedGearIfNeeded failed', err);
+  }
+}
+
+/**
+ * One-time move of already-saved gear onto the reorganised categories (Fuego, Cocina, Auto, …).
+ * Matches by exact name against the catalog and the starter checklist; items with names the user
+ * typed themselves keep their category. Runs before the first screen mounts, like seedGearIfNeeded.
+ */
+export async function migrateCategoriesIfNeeded(): Promise<void> {
+  try {
+    if (await AsyncStorage.getItem(CATEGORIES_V2_FLAG)) return;
+    const raw = await AsyncStorage.getItem(GEAR_KEY);
+    const items: GearItem[] = raw ? JSON.parse(raw) ?? [] : [];
+    const byName = new Map<string, GearItem['category']>();
+    for (const it of SEED_ITEMS_BY_BAG.flat()) byName.set(it.name.toLowerCase(), it.category);
+    for (const it of CATALOG_ITEMS) byName.set(it.name.toLowerCase(), it.category);
+    const next = items.map((it) => {
+      const cat = byName.get(it.name.toLowerCase());
+      return cat && cat !== it.category ? { ...it, category: cat } : it;
+    });
+    await AsyncStorage.setItem(GEAR_KEY, JSON.stringify(next));
+    await AsyncStorage.setItem(CATEGORIES_V2_FLAG, 'done');
+  } catch (err) {
+    console.error('migrateCategoriesIfNeeded failed', err);
   }
 }

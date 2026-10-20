@@ -80,8 +80,13 @@ There is no test suite yet.
   a next-morning digest when `computeAlerts` already has something. Inicio calls it whenever it sees new gear data;
   settings live under `gonza:notifications` (off by default, permission asked when enabled). Android may delay these
   in battery-saver mode, so Inicio's "Para revisar" card remains the reliable source.
-- `src/catalog.ts` — `CATALOG_ITEMS`, ~90 common gear names/categories (no quantities) offered in the "+ Ítem"
-  picker so most entries can be tapped instead of typed. Independent from `seedData.ts`'s starter checklist.
+- `src/catalog.ts` — `CATALOG_ITEMS`, ~240 common gear names/categories offered in the "+ Ítem"
+  picker so most entries can be tapped instead of typed (an optional `quantity` hint prefills "Cantidad", e.g.
+  "Obligatorio por ley" on the Auto items). Independent from `seedData.ts`'s starter checklist. Categories (`GearCategory`)
+  are prepper-style: Agua, Alimentos, Fuego, Cocina, Salud, Herramientas, Refugio y abrigo, Navegación y señales,
+  Comunicación, Energía, Auto, Documentos, Otros. Salud follows the Red Cross kit list as loose items (no "Botiquín"
+  category); Auto follows the Argentine Ley de Tránsito (matafuego + balizas obligatorios). `migrateCategoriesIfNeeded()`
+  in `seedData.ts` (flag `gonza:categories-v2`) moves already-saved items onto the new categories by exact name.
 - `src/ui/ItemPickerModal.tsx` — two-step bottom sheet over `CATALOG_ITEMS`: first a list of categories (with item
   counts), then only that category's items with a search box scoped to it. The category state lives in the outer
   component so Android's back button steps back to the categories before closing. Built entirely on RN's own
