@@ -281,7 +281,7 @@ export default function ChecklistScreen() {
         )}
 
         {showForm && (
-          <View style={styles.formWrap}>
+          <ScrollView style={styles.formScroll} contentContainerStyle={styles.formWrap} keyboardShouldPersistTaps="handled">
             <Card>
               <Button title="Elegir de la lista" variant="secondary" onPress={() => setPickerOpen(true)} />
               <View style={styles.pickerGap} />
@@ -319,10 +319,10 @@ export default function ChecklistScreen() {
               )}
               <Button title={editingId ? 'Guardar cambios' : 'Guardar'} onPress={handleSave} />
             </Card>
-          </View>
+          </ScrollView>
         )}
 
-        {view.kind === 'resumen' ? (
+        {showForm ? null : view.kind === 'resumen' ? (
           <ScrollView contentContainerStyle={styles.list}>
             <View style={styles.ready}>
               <View style={styles.readyTop}>
@@ -527,7 +527,8 @@ function makeStyles(colors: Colors) {
     safe: { flex: 1, backgroundColor: colors.background },
     back: { paddingHorizontal: spacing.lg, paddingBottom: spacing.sm },
     backText: { fontFamily: colors.fonts.label, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', color: colors.accent },
-    formWrap: { paddingHorizontal: spacing.lg },
+    formScroll: { flex: 1 },
+    formWrap: { paddingHorizontal: spacing.lg, paddingBottom: spacing.xl },
     pickerGap: { height: spacing.md },
     chipsRow: { marginBottom: spacing.sm },
     list: { paddingHorizontal: spacing.lg, paddingBottom: spacing.xl },
