@@ -91,6 +91,10 @@ There is no test suite yet.
   `recomendado`). The catalog assigns one per item via its `ESSENTIAL_NAMES` / `OPTIONAL_NAMES` sets, the Equipo form has a
   "Prioridad" chip row, `readiness()` weights the percentage 3/2/1 and `topPending()` lists essentials first.
   `migratePrioritiesIfNeeded()` (flag `gonza:priorities-v1`) backfills saved items by exact name.
+- `src/situations.ts` — `SITUATIONS` (apagón, evacuación, inundación, terremoto, incendio, ola de calor, auto) for Equipo's
+  "Por situación" grouping. Membership is derived from an item's exact catalog name (Auto = the whole `Auto` category), so
+  no stored field or migration; one item can sit in several situations. `bySituation()` feeds the summary rows,
+  `itemsForSituation()` the drill-down list.
 - `src/ui/ItemPickerModal.tsx` — two-step bottom sheet over `CATALOG_ITEMS`: first a list of categories (with item
   counts), then only that category's items with a search box scoped to it. The category state lives in the outer
   component so Android's back button steps back to the categories before closing. Built entirely on RN's own

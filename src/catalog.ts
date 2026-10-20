@@ -138,6 +138,7 @@ const RAW_CATALOG: CatalogItem[] = [
   { name: 'Protector labial con FPS', category: 'Salud' },
   { name: 'Pastillas para el mareo', category: 'Salud' },
   { name: 'Manual de primeros auxilios', category: 'Salud' },
+  { name: 'Barbijo FFP2 / FFP3 (humo y polvo)', category: 'Salud' },
   { name: 'Apósitos compresivos (2)', category: 'Salud' },
   { name: 'Curitas surtidas (25)', category: 'Salud' },
   { name: 'Pomada antibiótica (sobres)', category: 'Salud' },
@@ -276,6 +277,7 @@ const RAW_CATALOG: CatalogItem[] = [
   { name: 'Libreta y lápiz', category: 'Otros' },
   { name: 'Correa de anclaje para niños', category: 'Otros' },
   { name: 'Bolsas ziploc', category: 'Otros' },
+  { name: 'Mochila de evacuación 72 h', category: 'Otros' },
   { name: 'Bolsas de basura grandes', category: 'Otros' },
   { name: 'Papel higiénico y pañuelos', category: 'Otros' },
   { name: 'Toallitas húmedas', category: 'Otros' },
@@ -298,7 +300,7 @@ const ESSENTIAL_NAMES = new Set([
   'Fotocopias de DNI', 'Efectivo en billetes chicos',
   'Matafuego ABC (mín. 1 kg, oblea vigente)', 'Balizas triangulares (2)', 'Martillo rompe-vidrios y corta-cinturón',
   'Cables de arranque (pinza)', 'Rueda de auxilio en buen estado', 'Gato y llave de cruz', 'Cédula verde y azul del auto',
-  'Licencia de conducir', 'Póliza de seguro del auto',
+  'Licencia de conducir', 'Póliza de seguro del auto', 'Mochila de evacuación 72 h',
 ]);
 
 const OPTIONAL_NAMES = new Set([

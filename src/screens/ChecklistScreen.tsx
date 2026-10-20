@@ -10,6 +10,7 @@ import { useStorageList } from '../storage';
 import { Bag, GEAR_CATEGORIES, GEAR_PRIORITIES, GearCategory, GearItem, GearPriority } from '../types';
 import { buildSeed } from '../seedData';
 import { UNASSIGNED, byBag, byCategory, readiness } from '../progress';
+import { SITUATIONS, SituationKey, bySituation, itemsForSituation } from '../situations';
 import { SOON_DAYS, addMonths, parseExpiry } from '../alerts';
 import { CATALOG_ITEMS } from '../catalog';
 
@@ -18,7 +19,7 @@ const BAG_EMOJI_PRESETS = [
   '🎒', '🧳', '🩹', '⛑️', '💧', '🔥', '🛠️', '📡', '🔦', '🍫', '📄', '🐾', '🏠', '🚗', '🧒', '🧭',
 ];
 
-type GroupMode = 'categoria' | 'mochila';
+type GroupMode = 'categoria' | 'mochila' | 'situacion';
 
 /** 'resumen' shows readiness + grouped bars; 'todos' and the category/bag variants are
  * filtered item lists — one screen, no navigation-stack entries. */
@@ -26,7 +27,8 @@ type ViewMode =
   | { kind: 'resumen' }
   | { kind: 'todos' }
   | { kind: 'category'; value: GearCategory }
-  | { kind: 'bag'; value: string };
+  | { kind: 'bag'; value: string }
+  | { kind: 'situation'; value: SituationKey };
 
 function fmtDate(d: Date) {
   return `${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
@@ -104,10 +106,12 @@ export default function ChecklistScreen() {
 
   const categoryRows = useMemo(() => byCategory(items), [items]);
   const bagRows = useMemo(() => byBag(items, bags), [items, bags]);
+  const situationRows = useMemo(() => bySituation(items), [items]);
 
   const listed = useMemo(() => {
     if (view.kind === 'todos') return items;
     if (view.kind === 'category') return items.filter((it) => it.category === view.value);
+    if (view.kind === 'situation') return itemsForSituation(items, view.value);
     if (view.kind === 'bag') {
       const bagIds = new Set(bags.map((b) => b.id));
       if (view.value === UNASSIGNED) return items.filter((it) => !it.bagId || !bagIds.has(it.bagId));
@@ -245,7 +249,15 @@ export default function ChecklistScreen() {
   const bagTitle = (id: string) => (id === UNASSIGNED ? 'Sin mochila' : bags.find((b) => b.id === id)?.name ?? 'Mochila');
 
   const title =
-    view.kind === 'resumen' ? 'Equipo' : view.kind === 'todos' ? 'Todos' : view.kind === 'category' ? view.value : bagTitle(view.value);
+    view.kind === 'resumen'
+      ? 'Equipo'
+      : view.kind === 'todos'
+        ? 'Todos'
+        : view.kind === 'category'
+          ? view.value
+          : view.kind === 'situation'
+            ? (SITUATIONS.find((s) => s.key === view.value)?.label.replace(/^\S+\s/, '') ?? 'Situación')
+            : bagTitle(view.value);
 
   const headerCode =
     view.kind === 'resumen'
@@ -333,6 +345,7 @@ export default function ChecklistScreen() {
             <View style={styles.groupRow}>
               <Chip label="Por categoría" selected={groupMode === 'categoria'} onPress={() => setGroupMode('categoria')} />
               <Chip label="Por mochila" selected={groupMode === 'mochila'} onPress={() => setGroupMode('mochila')} />
+              <Chip label="Por situación" selected={groupMode === 'situacion'} onPress={() => setGroupMode('situacion')} />
             </View>
 
             {items.length === 0 ? (
@@ -363,6 +376,27 @@ export default function ChecklistScreen() {
                 <Pressable onPress={() => setView({ kind: 'todos' })} style={styles.allRow}>
                   <Text style={styles.allText}>Ver todos los ítems ›</Text>
                 </Pressable>
+              </View>
+            ) : groupMode === 'situacion' ? (
+              <View style={styles.cats}>
+                {situationRows.map((row) => {
+                  const r = row.total > 0 ? row.done / row.total : 0;
+                  return (
+                    <Pressable
+                      key={row.key}
+                      onPress={() => setView({ kind: 'situation', value: row.key as SituationKey })}
+                      style={styles.catRow}
+                    >
+                      <View style={styles.catTop}>
+                        <Text style={styles.catName}>{row.label}</Text>
+                        <Text style={styles.catFrac}>
+                          {row.done}/{row.total}
+                        </Text>
+                      </View>
+                      <Bar ratio={r} color={progressColor(colors, r)} />
+                    </Pressable>
+                  );
+                })}
               </View>
             ) : (
               <View style={styles.cats}>
@@ -511,7 +545,7 @@ function makeStyles(colors: Colors) {
     readySideText: { fontFamily: colors.fonts.label, fontSize: 11, color: colors.textMuted, lineHeight: 17 },
     readySideStrong: { color: colors.text, fontWeight: '700' },
 
-    groupRow: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.md },
+    groupRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginBottom: spacing.md },
 
     emptyWrap: { gap: spacing.md },
     cats: { gap: spacing.md },
