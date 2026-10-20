@@ -10,6 +10,7 @@ import { useStorageList } from '../storage';
 import { Bag, GEAR_CATEGORIES, GEAR_PRIORITIES, GearCategory, GearItem, GearPriority } from '../types';
 import { buildSeed } from '../seedData';
 import { UNASSIGNED, byBag, byCategory, readiness } from '../progress';
+import { tipFor } from '../tips';
 import { SITUATIONS, SituationKey, bySituation, itemsForSituation } from '../situations';
 import { SOON_DAYS, addMonths, parseExpiry } from '../alerts';
 import { CATALOG_ITEMS } from '../catalog';
@@ -482,6 +483,7 @@ export default function ChecklistScreen() {
                     </Text>
                   ) : null}
                   {item.quantity ? <Text style={styles.itemQuantity}>{item.quantity}</Text> : null}
+                  {tipFor(item.name) ? <Text style={styles.itemQuantity}>Mirá: {tipFor(item.name)}</Text> : null}
                   {itemNotes(item).map((n) => (
                     <Text key={n.text} style={[styles.itemQuantity, n.warn && { color: colors.warning }]}>
                       {n.text}

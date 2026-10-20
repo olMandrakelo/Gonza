@@ -95,6 +95,8 @@ There is no test suite yet.
   "Por situación" grouping. Membership is derived from an item's exact catalog name (Auto = the whole `Auto` category), so
   no stored field or migration; one item can sit in several situations. `bySituation()` feeds the summary rows,
   `itemsForSituation()` the drill-down list.
+- `src/tips.ts` — `tipFor(name)`: "Qué mirar antes de comprar" notes for ~35 key items (water filter, torniquete, auto kit…),
+  looked up by exact catalog name at render time and shown as "Mirá: …" under the item in Equipo. No stored field.
 - `src/ui/ItemPickerModal.tsx` — two-step bottom sheet over `CATALOG_ITEMS`: first a list of categories (with item
   counts), then only that category's items with a search box scoped to it. The category state lives in the outer
   component so Android's back button steps back to the categories before closing. Built entirely on RN's own
