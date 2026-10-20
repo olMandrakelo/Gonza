@@ -82,9 +82,10 @@ There is no test suite yet.
   in battery-saver mode, so Inicio's "Para revisar" card remains the reliable source.
 - `src/catalog.ts` — `CATALOG_ITEMS`, ~90 common gear names/categories (no quantities) offered in the "+ Ítem"
   picker so most entries can be tapped instead of typed. Independent from `seedData.ts`'s starter checklist.
-- `src/ui/ItemPickerModal.tsx` — search + tap-to-select bottom sheet over `CATALOG_ITEMS`, grouped by category via
-  `SectionList`. Built entirely on RN's own `Modal`/`SectionList`, no extra dependency, so it ships as a plain OTA
-  update like the rest of the UI.
+- `src/ui/ItemPickerModal.tsx` — two-step bottom sheet over `CATALOG_ITEMS`: first a list of categories (with item
+  counts), then only that category's items with a search box scoped to it. The category state lives in the outer
+  component so Android's back button steps back to the categories before closing. Built entirely on RN's own
+  `Modal`/`FlatList`, no extra dependency, so it ships as a plain OTA update like the rest of the UI.
 - `src/ui/appIcon.ts` — launcher-icon switching over `expo-alternate-app-icons`. The `require` is guarded and every
   call no-ops when the native module is absent, so an OTA update can't crash an older install; the Ajustes section
   only renders when `iconsSupported()` is true. The alternates themselves are declared in the `app.json` plugin
