@@ -97,6 +97,9 @@ There is no test suite yet.
   `itemsForSituation()` the drill-down list.
 - `src/tips.ts` — `tipFor(name)`: "Qué mirar antes de comprar" notes for ~35 key items (water filter, torniquete, auto kit…),
   looked up by exact catalog name at render time and shown as "Mirá: …" under the item in Equipo. No stored field.
+- `src/carKit.ts` — `buildCarKit(existing, bagId)`: ~30 catalog items (with their priorities) for Equipo's "Cargar checklist de
+  auto" button. `ChecklistScreen` reuses a bag whose name contains "auto" or creates "🚗 Mochila de auto"; names already in
+  that bag are skipped, so tapping it twice never duplicates. The loaded items are plain, editable `GearItem`s.
 - `src/ui/ItemPickerModal.tsx` — two-step bottom sheet over `CATALOG_ITEMS`: first a list of categories (with item
   counts), then only that category's items with a search box scoped to it. The category state lives in the outer
   component so Android's back button steps back to the categories before closing. Built entirely on RN's own

@@ -6,10 +6,11 @@ import { Bar, Button, Card, Chip, EmptyState, Field, Label, Meter, Screen, Scree
 import { ItemPickerModal } from '../ui/ItemPickerModal';
 import { useTheme } from '../ui/ThemeContext';
 import { Colors, progressColor, spacing } from '../ui/theme';
-import { useStorageList } from '../storage';
+import { generateId, useStorageList } from '../storage';
 import { Bag, GEAR_CATEGORIES, GEAR_PRIORITIES, GearCategory, GearItem, GearPriority } from '../types';
 import { buildSeed } from '../seedData';
 import { UNASSIGNED, byBag, byCategory, readiness } from '../progress';
+import { CAR_BAG, buildCarKit } from '../carKit';
 import { tipFor } from '../tips';
 import { SITUATIONS, SituationKey, bySituation, itemsForSituation } from '../situations';
 import { SOON_DAYS, addMonths, parseExpiry } from '../alerts';
@@ -247,6 +248,15 @@ export default function ChecklistScreen() {
     await addMany(seedItems);
   }
 
+  async function handleLoadCarKit() {
+    let bag = bags.find((b) => b.name.toLowerCase().includes('auto'));
+    if (!bag) {
+      bag = { ...CAR_BAG, id: generateId() };
+      await addManyBags([bag]);
+    }
+    await addMany(buildCarKit(items, bag.id));
+  }
+
   const bagTitle = (id: string) => (id === UNASSIGNED ? 'Sin mochila' : bags.find((b) => b.id === id)?.name ?? 'Mochila');
 
   const title =
@@ -357,6 +367,7 @@ export default function ChecklistScreen() {
                   variant="secondary"
                   onPress={handleLoadSeed}
                 />
+                <Button title="Cargar checklist de auto" variant="secondary" onPress={handleLoadCarKit} />
               </View>
             ) : groupMode === 'categoria' ? (
               <View style={styles.cats}>
@@ -455,6 +466,11 @@ export default function ChecklistScreen() {
                     <Button title="Vaciar mochilas" variant="danger" onPress={() => confirmClear('mochilas', clearBags)} />
                   </View>
                 )}
+              </View>
+            )}
+            {items.length > 0 && !items.some((it) => it.category === 'Auto') && (
+              <View style={styles.clearWrap}>
+                <Button title="Cargar checklist de auto" variant="secondary" onPress={handleLoadCarKit} />
               </View>
             )}
             {items.length > 0 && (
