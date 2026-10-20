@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
-import { BackHandler, FlatList, Platform, Pressable, ScrollView, StyleSheet, Text, ToastAndroid, View } from 'react-native';
+import { Alert, BackHandler, FlatList, Platform, Pressable, ScrollView, StyleSheet, Text, ToastAndroid, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
 import { Bar, Button, Card, Chip, EmptyState, Field, Label, Meter, Screen, ScreenHeader, confirmClear, confirmRemove } from '../ui/components';
@@ -293,6 +293,17 @@ export default function ChecklistScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clearMenu, items, bags]);
 
+  function confirmRemoveBag(b: Bag) {
+    Alert.alert(
+      `Borrar ${b.name}`,
+      'Sus ítems no se borran: pasan a "Sin mochila".',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        { text: 'Borrar', style: 'destructive', onPress: () => removeBag(b.id) },
+      ]
+    );
+  }
+
   async function handleLoadCarKit() {
     let bag = bags.find((b) => b.name.toLowerCase().includes('auto'));
     if (!bag) {
@@ -459,13 +470,24 @@ export default function ChecklistScreen() {
               <View style={styles.cats}>
                 {bagRows.map((row) => {
                   const r = row.total > 0 ? row.done / row.total : 0;
+                  const bag = bags.find((b) => b.id === row.key);
                   return (
                     <Pressable key={row.key} onPress={() => setView({ kind: 'bag', value: row.key })} style={styles.catRow}>
                       <View style={styles.catTop}>
-                        <Text style={styles.catName}>{row.label}</Text>
+                        <Text style={[styles.catName, styles.bagName]}>{row.label}</Text>
                         <Text style={styles.catFrac}>
                           {row.done}/{row.total}
                         </Text>
+                        {bag ? (
+                          <>
+                            <Pressable hitSlop={10} onPress={() => startEditBag(bag)}>
+                              <Text style={styles.remove}>✎</Text>
+                            </Pressable>
+                            <Pressable hitSlop={10} onPress={() => confirmRemoveBag(bag)}>
+                              <Text style={styles.remove}>✕</Text>
+                            </Pressable>
+                          </>
+                        ) : null}
                       </View>
                       <Bar ratio={r} color={progressColor(colors, r)} />
                     </Pressable>
@@ -497,17 +519,8 @@ export default function ChecklistScreen() {
                   <Button title="+ Mochila" variant="secondary" onPress={() => setShowBagForm(true)} />
                 )}
 
-                {bags.length > 0 && (
+                {bags.length > 0 && !showBagForm && (
                   <View style={styles.bagManage}>
-                    <Label>Mochilas creadas</Label>
-                    {bags.map((b) => (
-                      <Pressable key={b.id} style={styles.bagManageRow} onPress={() => startEditBag(b)}>
-                        <Text style={styles.bagManageName}>{b.emoji ? `${b.emoji} ${b.name}` : b.name}</Text>
-                        <Pressable hitSlop={12} onPress={() => removeBag(b.id)}>
-                          <Text style={styles.remove}>✕</Text>
-                        </Pressable>
-                      </Pressable>
-                    ))}
                     <Button title="Vaciar mochilas" variant="danger" onPress={() => confirmClear('mochilas', clearBags)} />
                   </View>
                 )}
@@ -621,7 +634,8 @@ function makeStyles(colors: Colors) {
     emptyWrap: { gap: spacing.md },
     cats: { gap: spacing.md },
     catRow: { gap: spacing.xs },
-    catTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' },
+    catTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: spacing.md },
+    bagName: { flex: 1 },
     catName: { color: colors.text, fontSize: 14, fontWeight: '600' },
     catFrac: { fontFamily: colors.fonts.label, fontSize: 11, color: colors.textMuted },
     allRow: { paddingTop: spacing.sm },
