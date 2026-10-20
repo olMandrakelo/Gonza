@@ -126,7 +126,15 @@ export function Button({
       onPress={onPress}
       style={[styles.button, variant === 'secondary' && styles.buttonSecondary, variant === 'danger' && styles.buttonDanger]}
     >
-      <Text style={[styles.buttonText, variant === 'secondary' && styles.buttonTextSecondary]}>{title}</Text>
+      <Text
+        style={[
+          styles.buttonText,
+          variant === 'secondary' && styles.buttonTextSecondary,
+          variant === 'danger' && styles.buttonTextDanger,
+        ]}
+      >
+        {title}
+      </Text>
     </Pressable>
   );
 }
@@ -244,8 +252,14 @@ function makeStyles(colors: Colors) {
       borderWidth: 1,
       borderColor: colors.border,
     },
+    // Small outlined "Vaciar …" button: destructive actions shouldn't compete with the main ones.
     buttonDanger: {
-      backgroundColor: colors.danger,
+      backgroundColor: 'transparent',
+      borderWidth: 1,
+      borderColor: colors.danger,
+      alignSelf: 'center',
+      paddingVertical: spacing.xs + 2,
+      paddingHorizontal: spacing.lg,
     },
     buttonText: {
       fontFamily: colors.fonts.label,
@@ -258,6 +272,10 @@ function makeStyles(colors: Colors) {
     buttonTextSecondary: {
       color: colors.text,
     },
+    buttonTextDanger: {
+      color: colors.danger,
+      fontSize: 12,
+    },
     emptyWrap: {
       paddingVertical: spacing.xl,
       paddingHorizontal: spacing.lg,
@@ -269,6 +287,14 @@ function makeStyles(colors: Colors) {
       fontSize: 14,
     },
   });
+}
+
+/** Confirms deleting a known number of items (the partial "¿Qué querés vaciar?" options). */
+export function confirmRemove(what: string, count: number, onConfirm: () => void) {
+  Alert.alert(`Vaciar ${what}`, `Se borran ${count} ${count === 1 ? 'ítem' : 'ítems'} y no se puede deshacer.`, [
+    { text: 'Cancelar', style: 'cancel' },
+    { text: 'Vaciar', style: 'destructive', onPress: onConfirm },
+  ]);
 }
 
 /** Asks for confirmation before running a destructive "empty this list" action. */

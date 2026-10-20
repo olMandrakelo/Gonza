@@ -2,7 +2,8 @@ import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { BackHandler, FlatList, Platform, Pressable, ScrollView, StyleSheet, Text, ToastAndroid, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
-import { Bar, Button, Card, Chip, EmptyState, Field, Label, Meter, Screen, ScreenHeader, confirmClear } from '../ui/components';
+import { Bar, Button, Card, Chip, EmptyState, Field, Label, Meter, Screen, ScreenHeader, confirmClear, confirmRemove } from '../ui/components';
+import { ChoiceOption, ChoiceSheet } from '../ui/ChoiceSheet';
 import { ItemPickerModal } from '../ui/ItemPickerModal';
 import { useTheme } from '../ui/ThemeContext';
 import { Colors, progressColor, spacing } from '../ui/theme';
@@ -62,7 +63,7 @@ function itemNotes(it: GearItem): { text: string; warn: boolean }[] {
 export default function ChecklistScreen() {
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
-  const { items, loading, addItem, addMany, updateItem, removeItem, clearAll: clearItems } = useStorageList<GearItem>('gonza:gear');
+  const { items, loading, addItem, addMany, updateItem, removeItem, removeMany, clearAll: clearItems } = useStorageList<GearItem>('gonza:gear');
   const {
     items: bags,
     addItem: addBag,
@@ -247,6 +248,50 @@ export default function ChecklistScreen() {
     await addManyBags(seedBags);
     await addMany(seedItems);
   }
+
+  const [clearMenu, setClearMenu] = useState<null | 'main' | 'category' | 'bag'>(null);
+
+  function removeWithConfirm(what: string, list: GearItem[]) {
+    setClearMenu(null);
+    if (list.length === 0) return;
+    confirmRemove(what, list.length, () => removeMany(list.map((it) => it.id)));
+  }
+
+  const clearOptions: ChoiceOption[] = useMemo(() => {
+    const haveList = items.filter((it) => it.have);
+    const pendingList = items.filter((it) => !it.have);
+    if (clearMenu === 'category') {
+      return byCategory(items).map((row) => ({
+        label: row.label,
+        hint: String(row.total),
+        onPress: () => removeWithConfirm(`${row.label}`, items.filter((it) => it.category === row.key)),
+      }));
+    }
+    if (clearMenu === 'bag') {
+      const bagIds = new Set(bags.map((b) => b.id));
+      return byBag(items, bags)
+        .filter((row) => row.total > 0)
+        .map((row) => ({
+          label: row.label,
+          hint: String(row.total),
+          onPress: () =>
+            removeWithConfirm(
+              row.label,
+              row.key === UNASSIGNED
+                ? items.filter((it) => !it.bagId || !bagIds.has(it.bagId))
+                : items.filter((it) => it.bagId === row.key)
+            ),
+        }));
+    }
+    const opts: ChoiceOption[] = [];
+    if (haveList.length > 0) opts.push({ label: 'Solo los que ya tengo (tildados)', hint: String(haveList.length), onPress: () => removeWithConfirm('los ítems tildados', haveList) });
+    if (pendingList.length > 0) opts.push({ label: 'Solo los pendientes', hint: String(pendingList.length), onPress: () => removeWithConfirm('los ítems pendientes', pendingList) });
+    opts.push({ label: 'Una categoría…', onPress: () => setClearMenu('category') });
+    if (bags.length > 0) opts.push({ label: 'Una mochila…', onPress: () => setClearMenu('bag') });
+    opts.push({ label: 'Todo el equipo', hint: String(items.length), destructive: true, onPress: () => { setClearMenu(null); confirmClear('el equipo (todos los ítems)', clearItems); } });
+    return opts;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clearMenu, items, bags]);
 
   async function handleLoadCarKit() {
     let bag = bags.find((b) => b.name.toLowerCase().includes('auto'));
@@ -475,7 +520,7 @@ export default function ChecklistScreen() {
             )}
             {items.length > 0 && (
               <View style={styles.clearWrap}>
-                <Button title="Vaciar equipo" variant="danger" onPress={() => confirmClear('el equipo (todos los ítems)', clearItems)} />
+                <Button title="Vaciar equipo…" variant="danger" onPress={() => setClearMenu('main')} />
               </View>
             )}
           </ScrollView>
@@ -522,6 +567,13 @@ export default function ChecklistScreen() {
           />
         )}
       </Screen>
+      <ChoiceSheet
+        visible={clearMenu !== null}
+        title={clearMenu === 'category' ? 'Vaciar una categoría' : clearMenu === 'bag' ? 'Vaciar una mochila' : '¿Qué querés vaciar?'}
+        options={clearOptions}
+        onBack={clearMenu === 'category' || clearMenu === 'bag' ? () => setClearMenu('main') : undefined}
+        onClose={() => setClearMenu(null)}
+      />
       <ItemPickerModal
         visible={pickerOpen}
         onClose={() => setPickerOpen(false)}
