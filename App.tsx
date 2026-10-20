@@ -10,7 +10,7 @@ import HomeScreen from './src/screens/HomeScreen';
 import MaterialScreen from './src/screens/MaterialScreen';
 import QuizScreen from './src/screens/QuizScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
-import { migrateCategoriesIfNeeded, seedGearIfNeeded } from './src/seedData';
+import { migrateCategoriesIfNeeded, migratePrioritiesIfNeeded, seedGearIfNeeded } from './src/seedData';
 import { ThemeProvider, useTheme } from './src/ui/ThemeContext';
 import { TabIcon } from './src/ui/icons';
 
@@ -75,7 +75,7 @@ export default function App() {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    seedGearIfNeeded().then(migrateCategoriesIfNeeded).finally(() => setReady(true));
+    seedGearIfNeeded().then(migrateCategoriesIfNeeded).then(migratePrioritiesIfNeeded).finally(() => setReady(true));
   }, []);
 
   // Seeding must land in AsyncStorage before ChecklistScreen's useStorageList reads it,

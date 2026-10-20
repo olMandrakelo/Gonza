@@ -87,6 +87,10 @@ There is no test suite yet.
   Comunicación, Energía, Auto, Documentos, Otros. Salud follows the Red Cross kit list as loose items (no "Botiquín"
   category); Auto follows the Argentine Ley de Tránsito (matafuego + balizas obligatorios). `migrateCategoriesIfNeeded()`
   in `seedData.ts` (flag `gonza:categories-v2`) moves already-saved items onto the new categories by exact name.
+  Items also carry an optional `priority` (`esencial` / `recomendado` / `opcional`, `GearItem.priority`; absent counts as
+  `recomendado`). The catalog assigns one per item via its `ESSENTIAL_NAMES` / `OPTIONAL_NAMES` sets, the Equipo form has a
+  "Prioridad" chip row, `readiness()` weights the percentage 3/2/1 and `topPending()` lists essentials first.
+  `migratePrioritiesIfNeeded()` (flag `gonza:priorities-v1`) backfills saved items by exact name.
 - `src/ui/ItemPickerModal.tsx` — two-step bottom sheet over `CATALOG_ITEMS`: first a list of categories (with item
   counts), then only that category's items with a search box scoped to it. The category state lives in the outer
   component so Android's back button steps back to the categories before closing. Built entirely on RN's own

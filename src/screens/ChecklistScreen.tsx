@@ -7,9 +7,9 @@ import { ItemPickerModal } from '../ui/ItemPickerModal';
 import { useTheme } from '../ui/ThemeContext';
 import { Colors, progressColor, spacing } from '../ui/theme';
 import { useStorageList } from '../storage';
-import { Bag, GEAR_CATEGORIES, GearCategory, GearItem } from '../types';
+import { Bag, GEAR_CATEGORIES, GEAR_PRIORITIES, GearCategory, GearItem, GearPriority } from '../types';
 import { buildSeed } from '../seedData';
-import { UNASSIGNED, byBag, byCategory } from '../progress';
+import { UNASSIGNED, byBag, byCategory, readiness } from '../progress';
 import { SOON_DAYS, addMonths, parseExpiry } from '../alerts';
 import { CATALOG_ITEMS } from '../catalog';
 
@@ -89,6 +89,7 @@ export default function ChecklistScreen() {
   const [name, setName] = useState('');
   const [category, setCategory] = useState<GearCategory>('Otros');
   const [quantity, setQuantity] = useState('');
+  const [priority, setPriority] = useState<GearPriority>('recomendado');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [expiresAt, setExpiresAt] = useState('');
   const [reviewEvery, setReviewEvery] = useState('');
@@ -99,8 +100,7 @@ export default function ChecklistScreen() {
   const [bagName, setBagName] = useState('');
   const [bagEmoji, setBagEmoji] = useState('');
 
-  const have = items.filter((it) => it.have).length;
-  const ratio = items.length ? have / items.length : 0;
+  const { done: have, ratio } = useMemo(() => readiness(items), [items]);
 
   const categoryRows = useMemo(() => byCategory(items), [items]);
   const bagRows = useMemo(() => byBag(items, bags), [items, bags]);
@@ -120,6 +120,7 @@ export default function ChecklistScreen() {
     setName('');
     setCategory('Otros');
     setQuantity('');
+    setPriority('recomendado');
     setBagId(undefined);
     setEditingId(null);
     setExpiresAt('');
@@ -132,6 +133,7 @@ export default function ChecklistScreen() {
     setName(it.name);
     setCategory(it.category);
     setQuantity(it.quantity ?? '');
+    setPriority(it.priority ?? 'recomendado');
     setBagId(it.bagId);
     setExpiresAt(it.expiresAt ?? '');
     setReviewEvery(it.reviewEveryMonths ? String(it.reviewEveryMonths) : '');
@@ -191,6 +193,7 @@ export default function ChecklistScreen() {
     const fields = {
       name: name.trim(),
       category,
+      priority,
       quantity: quantity.trim() || undefined,
       bagId,
       expiresAt: expiresAt.trim() || undefined,
@@ -274,6 +277,12 @@ export default function ChecklistScreen() {
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipsRow}>
                 {GEAR_CATEGORIES.map((c) => (
                   <Chip key={c} label={c} selected={category === c} onPress={() => setCategory(c)} />
+                ))}
+              </ScrollView>
+              <Label>Prioridad</Label>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipsRow}>
+                {GEAR_PRIORITIES.map((p) => (
+                  <Chip key={p.key} label={p.label} selected={priority === p.key} onPress={() => setPriority(p.key)} />
                 ))}
               </ScrollView>
               <Field label="Cantidad (opcional)" value={quantity} onChangeText={setQuantity} placeholder="Ej: 2 unidades" />
@@ -433,6 +442,11 @@ export default function ChecklistScreen() {
                 <View style={styles.itemBody}>
                   <Text style={[styles.itemName, item.have && styles.itemNameDone]}>{item.name}</Text>
                   {(view.kind === 'todos' || view.kind === 'bag') && <Text style={styles.itemCat}>{item.category}</Text>}
+                  {item.priority ? (
+                    <Text style={[styles.itemPriority, item.priority === 'esencial' && { color: colors.accent }]}>
+                      {item.priority}
+                    </Text>
+                  ) : null}
                   {item.quantity ? <Text style={styles.itemQuantity}>{item.quantity}</Text> : null}
                   {itemNotes(item).map((n) => (
                     <Text key={n.text} style={[styles.itemQuantity, n.warn && { color: colors.warning }]}>
@@ -464,6 +478,7 @@ export default function ChecklistScreen() {
           setName(item.name);
           setCategory(item.category);
           if (item.quantity) setQuantity(item.quantity);
+          if (item.priority) setPriority(item.priority);
           setPickerOpen(false);
         }}
       />
@@ -558,6 +573,7 @@ function makeStyles(colors: Colors) {
     itemName: { color: colors.text, fontSize: 15 },
     itemNameDone: { color: colors.textMuted },
     itemCat: { fontFamily: colors.fonts.label, fontSize: 10, letterSpacing: 0.8, textTransform: 'uppercase', color: colors.textMuted, marginTop: 2 },
+    itemPriority: { fontFamily: colors.fonts.label, fontSize: 10, letterSpacing: 0.8, textTransform: 'uppercase', fontWeight: '700', color: colors.textMuted, marginTop: 2 },
     reviewBtn: { fontFamily: colors.fonts.label, fontSize: 11, fontWeight: '700', color: colors.accent, marginTop: 6, textTransform: 'uppercase', letterSpacing: 0.6 },
     itemQuantity: { fontSize: 12, lineHeight: 16, color: colors.textMuted, marginTop: 3 },
     remove: { color: colors.textMuted, fontSize: 15, paddingHorizontal: spacing.xs },

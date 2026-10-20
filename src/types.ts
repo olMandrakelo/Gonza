@@ -29,11 +29,21 @@ export const GEAR_CATEGORIES: GearCategory[] = [
   'Otros',
 ];
 
+export type GearPriority = 'esencial' | 'recomendado' | 'opcional';
+
+export const GEAR_PRIORITIES: { key: GearPriority; label: string }[] = [
+  { key: 'esencial', label: 'Esencial' },
+  { key: 'recomendado', label: 'Recomendado' },
+  { key: 'opcional', label: 'Opcional' },
+];
+
 export interface GearItem {
   id: string;
   name: string;
   category: GearCategory;
   have: boolean;
+  /** How much it matters; absent on items saved before priorities existed, which count as 'recomendado'. */
+  priority?: GearPriority;
   quantity?: string;
   notes?: string;
   /** Which packed backpack this item belongs to, if any. A conceptually shared item (e.g.

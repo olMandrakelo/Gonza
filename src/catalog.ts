@@ -1,10 +1,12 @@
-import { GearCategory } from './types';
+import { GearCategory, GearPriority } from './types';
 
 export interface CatalogItem {
   name: string;
   category: GearCategory;
   /** Optional hint prefilled in the "Cantidad" field (e.g. "Obligatorio por ley"). */
   quantity?: string;
+  /** Defaults to 'recomendado' unless listed in ESSENTIAL_NAMES / OPTIONAL_NAMES below. */
+  priority?: GearPriority;
 }
 
 /**
@@ -15,7 +17,7 @@ export interface CatalogItem {
  * follows the Argentine Ley de Tránsito (matafuego + balizas are the only items required
  * nationally) plus AAA / government car-kit guides.
  */
-export const CATALOG_ITEMS: CatalogItem[] = [
+const RAW_CATALOG: CatalogItem[] = [
   // Agua
   { name: 'Agua embotellada', category: 'Agua' },
   { name: 'Bidón plegable', category: 'Agua' },
@@ -280,3 +282,38 @@ export const CATALOG_ITEMS: CatalogItem[] = [
   { name: 'Artículos de higiene personal', category: 'Otros' },
   { name: 'Libro o entretenimiento liviano', category: 'Otros' },
 ];
+
+/** Items without which a given situation is hard to cover, taken from the Instinto Imparable / Red Cross / Ley de Tránsito guides. */
+const ESSENTIAL_NAMES = new Set([
+  'Agua embotellada', 'Filtro de agua portátil', 'Pastillas potabilizadoras',
+  'Barritas energéticas', 'Ración de emergencia (tipo 3600 kcal)',
+  'Ferrocerio', 'Encendedor', 'Fósforos impermeables',
+  'Torniquete (CAT)', 'Apósitos compresivos (2)', 'Curitas surtidas (25)', 'Guantes sin látex (2 pares)',
+  'Gasas estériles 5x5 y 10x10 cm', 'Medicación personal (crónicos)',
+  'Navaja multiusos', 'Multiherramienta (alicate)', 'Linterna frontal', 'Cuerda o cordino', 'Cinta americana (duct tape)',
+  'Manta térmica', 'Ropa de abrigo',
+  'Silbato de emergencia', 'Brújula',
+  'Radio AM/FM a pilas', 'Radio de manivela',
+  'Powerbank', 'Pilas AA/AAA de repuesto',
+  'Fotocopias de DNI', 'Efectivo en billetes chicos',
+  'Matafuego ABC (mín. 1 kg, oblea vigente)', 'Balizas triangulares (2)', 'Martillo rompe-vidrios y corta-cinturón',
+  'Cables de arranque (pinza)', 'Rueda de auxilio en buen estado', 'Gato y llave de cruz', 'Cédula verde y azul del auto',
+  'Licencia de conducir', 'Póliza de seguro del auto',
+]);
+
+const OPTIONAL_NAMES = new Set([
+  'Purificador UV', 'Lona para recolectar agua de lluvia', 'Pajita filtrante personal', 'Miel o azúcar', 'Caramelos duros',
+  'Multivitamínico', 'Lupa de encendido solar', 'Guantes ignífugos', 'Hornillo de alcohol', 'Combustible sólido (pastillas)',
+  'Taza de acero inoxidable', 'Kit de sutura de emergencia', 'Collarín cervical improvisado', 'Parche ocular',
+  'Hacha o hachuela', 'Machete', 'Piedra de afilar', 'Lona o plástico grueso', 'Carpa o refugio liviano',
+  'Colchoneta aislante', 'Toalla de microfibra', 'Bolsa de vivac de emergencia', 'Varilla luminosa (cyalume)',
+  'Linterna estroboscópica', 'Generador portátil', 'Panel solar portátil', 'Lámpara solar', 'Cargador de manivela',
+  'Pendrive con documentación', 'Escrituras o documentación de propiedad', 'Juego de cartas', 'Libro o entretenimiento liviano',
+  'Arrancador portátil (jump starter)', 'Cadenas para nieve (zonas frías)', 'Rascador de hielo (zonas frías)',
+  'Bidón de nafta de reserva (homologado)', 'Cubre-asientos y toalla', 'Paraguas',
+]);
+
+export const CATALOG_ITEMS: CatalogItem[] = RAW_CATALOG.map((it) => ({
+  ...it,
+  priority: ESSENTIAL_NAMES.has(it.name) ? 'esencial' : OPTIONAL_NAMES.has(it.name) ? 'opcional' : 'recomendado',
+}));

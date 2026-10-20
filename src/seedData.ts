@@ -7,6 +7,7 @@ const SEEDED_FLAG = 'gonza:seeded-checklist-dia-cero';
 const GEAR_KEY = 'gonza:gear';
 const BAGS_KEY = 'gonza:bags';
 const CATEGORIES_V2_FLAG = 'gonza:categories-v2';
+const PRIORITIES_V1_FLAG = 'gonza:priorities-v1';
 
 type SeedGearItem = Omit<GearItem, 'id' | 'have' | 'bagId'>;
 
@@ -169,5 +170,23 @@ export async function migrateCategoriesIfNeeded(): Promise<void> {
     await AsyncStorage.setItem(CATEGORIES_V2_FLAG, 'done');
   } catch (err) {
     console.error('migrateCategoriesIfNeeded failed', err);
+  }
+}
+
+/** One-time: gives already-saved items the catalog's priority when their name matches exactly. Others stay unset (= recomendado). */
+export async function migratePrioritiesIfNeeded(): Promise<void> {
+  try {
+    if (await AsyncStorage.getItem(PRIORITIES_V1_FLAG)) return;
+    const raw = await AsyncStorage.getItem(GEAR_KEY);
+    const items: GearItem[] = raw ? JSON.parse(raw) ?? [] : [];
+    const byName = new Map(CATALOG_ITEMS.map((it) => [it.name.toLowerCase(), it.priority] as const));
+    const next = items.map((it) => {
+      const priority = byName.get(it.name.toLowerCase());
+      return !it.priority && priority ? { ...it, priority } : it;
+    });
+    await AsyncStorage.setItem(GEAR_KEY, JSON.stringify(next));
+    await AsyncStorage.setItem(PRIORITIES_V1_FLAG, 'done');
+  } catch (err) {
+    console.error('migratePrioritiesIfNeeded failed', err);
   }
 }
