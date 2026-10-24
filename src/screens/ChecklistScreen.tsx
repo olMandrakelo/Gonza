@@ -12,6 +12,7 @@ import { Bag, GEAR_CATEGORIES, GEAR_PRIORITIES, GearCategory, GearItem, GearPrio
 import { buildSeed } from '../seedData';
 import { UNASSIGNED, byBag, byCategory, readiness } from '../progress';
 import { CAR_BAG, buildCarKit } from '../carKit';
+import { FIRST_AID_BAG, buildFirstAidKit, findFirstAidBag } from '../firstAidKit';
 import { tipFor } from '../tips';
 import { SITUATIONS, SituationKey, bySituation, itemsForSituation } from '../situations';
 import { SOON_DAYS, addMonths, parseExpiry } from '../alerts';
@@ -304,6 +305,18 @@ export default function ChecklistScreen() {
     );
   }
 
+  async function handleLoadFirstAidKit() {
+    let bag = findFirstAidBag(bags);
+    if (!bag) {
+      bag = { ...FIRST_AID_BAG, id: generateId() };
+      await addManyBags([bag]);
+    }
+    await addMany(buildFirstAidKit(items, bag.id));
+  }
+
+  const firstAidBag = findFirstAidBag(bags);
+  const showFirstAidButton = !firstAidBag || !items.some((it) => it.bagId === firstAidBag.id);
+
   async function handleLoadCarKit() {
     let bag = bags.find((b) => b.name.toLowerCase().includes('auto'));
     if (!bag) {
@@ -524,6 +537,11 @@ export default function ChecklistScreen() {
                     <Button title="Vaciar mochilas" variant="danger" onPress={() => confirmClear('mochilas', clearBags)} />
                   </View>
                 )}
+              </View>
+            )}
+            {items.length > 0 && showFirstAidButton && (
+              <View style={styles.clearWrap}>
+                <Button title="Cargar ítems de botiquín" variant="secondary" onPress={handleLoadFirstAidKit} />
               </View>
             )}
             {items.length > 0 && !items.some((it) => it.category === 'Auto') && (

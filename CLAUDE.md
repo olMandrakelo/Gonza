@@ -100,6 +100,9 @@ There is no test suite yet.
 - `src/carKit.ts` — `buildCarKit(existing, bagId)`: ~30 catalog items (with their priorities) for Equipo's "Cargar checklist de
   auto" button. `ChecklistScreen` reuses a bag whose name contains "auto" or creates "🚗 Mochila de auto"; names already in
   that bag are skipped, so tapping it twice never duplicates. The loaded items are plain, editable `GearItem`s.
+- `src/firstAidKit.ts` — same pattern as `carKit.ts` for Equipo's "Cargar ítems de botiquín": 26 catalog items following the
+  American Red Cross family kit checklist, loaded into the bag whose name contains "botiqu" (created if missing). The button
+  shows only while that bag has no items.
 - `src/ui/ItemPickerModal.tsx` — two-step bottom sheet over `CATALOG_ITEMS`: first a list of categories (with item
   counts), then only that category's items with a search box scoped to it. The category state lives in the outer
   component so Android's back button steps back to the categories before closing. Built entirely on RN's own
