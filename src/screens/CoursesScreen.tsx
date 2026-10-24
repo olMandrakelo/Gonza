@@ -1,7 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import { FlatList, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Bar, Button, Card, Chip, EmptyState, Field, Screen, ScreenHeader, confirmClear } from '../ui/components';
+import { Bar, Button, Card, Chip, EmptyState, Field, Screen, ScreenHeader, confirmClear, confirmRemove } from '../ui/components';
+import { ChoiceOption, ChoiceSheet } from '../ui/ChoiceSheet';
 import { useTheme } from '../ui/ThemeContext';
 import { Colors, spacing } from '../ui/theme';
 import { useStorageList } from '../storage';
@@ -21,7 +22,8 @@ export default function CoursesScreen() {
     en_curso: colors.warning,
     hecho: colors.ok,
   };
-  const { items, loading, addItem, updateItem, removeItem, clearAll } = useStorageList<Course>('gonza:courses');
+  const { items, loading, addItem, updateItem, removeItem, removeMany, clearAll } = useStorageList<Course>('gonza:courses');
+  const [clearMenu, setClearMenu] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [name, setName] = useState('');
   const [provider, setProvider] = useState('');
@@ -53,6 +55,37 @@ export default function CoursesScreen() {
     });
     resetForm();
   }
+
+  const clearOptions: ChoiceOption[] = useMemo(() => {
+    const partial = (label: string, what: string, status: CourseStatus): ChoiceOption[] => {
+      const list = items.filter((c) => c.status === status);
+      if (list.length === 0) return [];
+      return [
+        {
+          label,
+          hint: String(list.length),
+          onPress: () => {
+            setClearMenu(false);
+            confirmRemove(what, list.length, () => removeMany(list.map((c) => c.id)));
+          },
+        },
+      ];
+    };
+    return [
+      ...partial('Solo los hechos', 'los cursos hechos', 'hecho'),
+      ...partial('Solo los en curso', 'los cursos en curso', 'en_curso'),
+      ...partial('Solo los pendientes', 'los cursos pendientes', 'pendiente'),
+      {
+        label: 'Todos los cursos',
+        hint: String(items.length),
+        destructive: true,
+        onPress: () => {
+          setClearMenu(false);
+          confirmClear('cursos', clearAll);
+        },
+      },
+    ];
+  }, [items, removeMany, clearAll]);
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -95,7 +128,7 @@ export default function CoursesScreen() {
           ListFooterComponent={
             items.length > 0 ? (
               <View style={{ marginTop: spacing.lg }}>
-                <Button title="Vaciar cursos" variant="danger" onPress={() => confirmClear('cursos', clearAll)} />
+                <Button title="Vaciar cursos…" variant="danger" onPress={() => setClearMenu(true)} />
               </View>
             ) : null
           }
@@ -117,6 +150,12 @@ export default function CoursesScreen() {
           )}
         />
       </Screen>
+      <ChoiceSheet
+        visible={clearMenu}
+        title="¿Qué querés vaciar?"
+        options={clearOptions}
+        onClose={() => setClearMenu(false)}
+      />
     </SafeAreaView>
   );
 }

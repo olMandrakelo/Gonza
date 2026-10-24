@@ -161,7 +161,7 @@ Every list screen (Equipo items and mochilas, Cursos, Material notas, Preguntas,
 (`src/ui/components.tsx`, an `Alert` confirm) and then the hook's `clearAll()` (`useStorageList`, a single `persist([])`).
 Equipo's "Vaciar equipo…" is the exception: it opens `ChoiceSheet` (`src/ui/ChoiceSheet.tsx`, a small bottom sheet) with
 "¿Qué querés vaciar?" — only the ticked items, only the pending ones, one category, one mochila, or everything — and the
-partial options confirm with the exact count (`confirmRemove()`) before calling the hook's `removeMany(ids)`. Clearing doesn't reset the seed flag, so the starter
+partial options confirm with the exact count (`confirmRemove()`) before calling the hook's `removeMany(ids)`. Cursos (hechos / en curso / pendientes / todos) and Preguntas (de un curso / sin curso / todas) use the same sheet. Clearing doesn't reset the seed flag, so the starter
 checklist won't silently reload — Equipo's empty state still offers "Cargar checklist sugerido".
 
 Screens follow the same pattern for theme-aware styles: read `colors` from `useTheme()`, then

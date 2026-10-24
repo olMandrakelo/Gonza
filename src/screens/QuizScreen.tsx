@@ -2,7 +2,8 @@ import React, { useCallback, useMemo, useState } from 'react';
 import { BackHandler, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
-import { Button, Card, Chip, EmptyState, Field, Label, Screen, ScreenHeader, confirmClear } from '../ui/components';
+import { Button, Card, Chip, EmptyState, Field, Label, Screen, ScreenHeader, confirmClear, confirmRemove } from '../ui/components';
+import { ChoiceOption, ChoiceSheet } from '../ui/ChoiceSheet';
 import { useTheme } from '../ui/ThemeContext';
 import { Colors, spacing } from '../ui/theme';
 import { useStorageList } from '../storage';
@@ -24,7 +25,7 @@ function shuffle<T>(arr: T[]): T[] {
 export default function QuizScreen() {
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
-  const { items: questions, loading, addItem, removeItem, clearAll } = useStorageList<Question>('gonza:questions');
+  const { items: questions, loading, addItem, removeItem, removeMany, clearAll } = useStorageList<Question>('gonza:questions');
   const { items: courses } = useStorageList<Course>('gonza:courses');
   const [mode, setMode] = useState<Mode>('simulacro');
 
@@ -40,7 +41,7 @@ export default function QuizScreen() {
           <Chip label="Banco" selected={mode === 'banco'} onPress={() => setMode('banco')} />
         </View>
         {mode === 'banco' ? (
-          <QuestionBank questions={questions} courses={courses} addItem={addItem} removeItem={removeItem} clearAll={clearAll} />
+          <QuestionBank questions={questions} courses={courses} addItem={addItem} removeItem={removeItem} removeMany={removeMany} clearAll={clearAll} />
         ) : (
           <Simulacro questions={questions} courses={courses} />
         )}
@@ -54,16 +55,19 @@ function QuestionBank({
   courses,
   addItem,
   removeItem,
+  removeMany,
   clearAll,
 }: {
   questions: Question[];
   courses: Course[];
   addItem: (q: Omit<Question, 'id'>) => Promise<Question>;
   removeItem: (id: string) => Promise<void>;
+  removeMany: (ids: string[]) => Promise<void>;
   clearAll: () => Promise<void>;
 }) {
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
+  const [clearMenu, setClearMenu] = useState<null | 'main' | 'course'>(null);
   const [showForm, setShowForm] = useState(false);
   const [text, setText] = useState('');
   const [optionTexts, setOptionTexts] = useState(['', '', '', '']);
@@ -95,6 +99,42 @@ function QuestionBank({
   function courseName(id?: string) {
     return courses.find((c) => c.id === id)?.name;
   }
+
+  const clearOptions: ChoiceOption[] = useMemo(() => {
+    const removeList = (what: string, list: Question[]) => {
+      setClearMenu(null);
+      if (list.length > 0) confirmRemove(what, list.length, () => removeMany(list.map((q) => q.id)));
+    };
+    const courseIds = new Set(courses.map((c) => c.id));
+    if (clearMenu === 'course') {
+      return courses
+        .map((c) => ({ c, list: questions.filter((q) => q.courseId === c.id) }))
+        .filter(({ list }) => list.length > 0)
+        .map(({ c, list }) => ({
+          label: c.name,
+          hint: String(list.length),
+          onPress: () => removeList(`las preguntas de ${c.name}`, list),
+        }));
+    }
+    const withoutCourse = questions.filter((q) => !q.courseId || !courseIds.has(q.courseId));
+    const opts: ChoiceOption[] = [];
+    if (questions.some((q) => q.courseId && courseIds.has(q.courseId))) {
+      opts.push({ label: 'Las de un curso…', onPress: () => setClearMenu('course') });
+    }
+    if (withoutCourse.length > 0) {
+      opts.push({ label: 'Las sin curso', hint: String(withoutCourse.length), onPress: () => removeList('las preguntas sin curso', withoutCourse) });
+    }
+    opts.push({
+      label: 'Todas las preguntas',
+      hint: String(questions.length),
+      destructive: true,
+      onPress: () => {
+        setClearMenu(null);
+        confirmClear('el banco de preguntas', clearAll);
+      },
+    });
+    return opts;
+  }, [clearMenu, questions, courses, removeMany, clearAll]);
 
   return (
     <>
@@ -155,10 +195,17 @@ function QuestionBank({
         ))}
         {questions.length > 0 && (
           <View style={{ marginTop: spacing.lg }}>
-            <Button title="Vaciar preguntas" variant="danger" onPress={() => confirmClear('el banco de preguntas', clearAll)} />
+            <Button title="Vaciar preguntas…" variant="danger" onPress={() => setClearMenu('main')} />
           </View>
         )}
       </ScrollView>
+      <ChoiceSheet
+        visible={clearMenu !== null}
+        title={clearMenu === 'course' ? 'Vaciar las preguntas de un curso' : '¿Qué querés vaciar?'}
+        options={clearOptions}
+        onBack={clearMenu === 'course' ? () => setClearMenu('main') : undefined}
+        onClose={() => setClearMenu(null)}
+      />
     </>
   );
 }
